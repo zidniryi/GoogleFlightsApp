@@ -16,6 +16,7 @@ import SignUpScreen from '../screens/auth/SignUpScreen';
 import FlightSearchScreen from '../screens/main/FlightSearchScreen';
 import FlightResultsScreen from '../screens/main/FlightResultsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import Colors from "../themes/Colors";
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const AuthStack = createStackNavigator<AuthStackParamList>();
@@ -55,12 +56,12 @@ const MainTabNavigator = () => {
 
 					return <Icon source={iconName} size={size} color={color} />;
 				},
-				tabBarActiveTintColor: '#1976d2',
-				tabBarInactiveTintColor: '#666',
+				tabBarActiveTintColor: Colors.primary.main,
+				tabBarInactiveTintColor: Colors.text.secondary,
 				headerStyle: {
-					backgroundColor: '#1976d2',
+					backgroundColor: Colors.primary.main,
 				},
-				headerTintColor: '#fff',
+				headerTintColor: Colors.text.inverse,
 				headerTitleStyle: {
 					fontWeight: 'bold',
 				},
@@ -97,8 +98,8 @@ const MainTabNavigator = () => {
 // Loading Screen
 const LoadingScreen = () => {
 	return (
-		<View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-			<ActivityIndicator size="large" color="#1976d2" />
+		<View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background.default}}>
+			<ActivityIndicator size="large" color={Colors.primary.main} />
 		</View>
 	);
 };

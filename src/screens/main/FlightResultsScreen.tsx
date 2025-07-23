@@ -18,6 +18,7 @@ import {Flight, FlightSearchParams} from '../../types';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {MainTabParamList} from '../../types';
 import {format} from 'date-fns';
+import {Colors} from '../../themes/Colors';
 
 type FlightResultsScreenNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Results'>;
 
@@ -185,7 +186,7 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: Colors.background.default,
 	},
 	emptyContainer: {
 		flex: 1,
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
 	emptyText: {
 		textAlign: 'center',
 		fontSize: 16,
-		color: '#666',
+		color: Colors.text.secondary,
 		marginBottom: 20,
 	},
 	backButton: {
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
 	},
 	summaryText: {
 		fontSize: 14,
-		color: '#666',
+		color: Colors.text.secondary,
 	},
 	resultsHeader: {
 		paddingHorizontal: 16,
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
 	},
 	resultsSubtitle: {
 		fontSize: 14,
-		color: '#666',
+		color: Colors.text.secondary,
 	},
 	listContainer: {
 		paddingHorizontal: 16,
@@ -310,12 +311,12 @@ const styles = StyleSheet.create({
 	},
 	priceLabel: {
 		fontSize: 12,
-		color: '#666',
+		color: Colors.text.secondary,
 	},
 	price: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: '#1976d2',
+		color: Colors.primary.main,
 	},
 });
 

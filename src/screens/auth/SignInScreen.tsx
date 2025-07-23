@@ -22,6 +22,7 @@ import {useAuth} from '../../context/AuthContext';
 import {SignInFormValues} from '../../types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {AuthStackParamList} from '../../types';
+import {Colors} from '../../themes/Colors';
 
 type SignInScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignIn'>;
 
@@ -163,7 +164,7 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: Colors.background.default,
 	},
 	scrollContainer: {
 		flexGrow: 1,
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
 	},
 	subtitle: {
 		fontSize: 16,
-		color: '#666',
+		color: Colors.text.secondary,
 		textAlign: 'center',
 	},
 	form: {
@@ -209,25 +210,25 @@ const styles = StyleSheet.create({
 	},
 	footerText: {
 		fontSize: 14,
-		color: '#666',
+		color: Colors.text.secondary,
 	},
 	demoInfo: {
 		marginTop: 24,
 		padding: 16,
-		backgroundColor: '#e3f2fd',
+		backgroundColor: Colors.semantic.info.background,
 		borderRadius: 8,
 		borderWidth: 1,
-		borderColor: '#bbdefb',
+		borderColor: Colors.primary.light,
 	},
 	demoTitle: {
 		fontSize: 14,
 		fontWeight: 'bold',
 		marginBottom: 8,
-		color: '#1976d2',
+		color: Colors.primary.main,
 	},
 	demoText: {
 		fontSize: 12,
-		color: '#1976d2',
+		color: Colors.primary.main,
 		marginBottom: 2,
 	},
 });
