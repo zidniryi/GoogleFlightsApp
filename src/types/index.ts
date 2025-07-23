@@ -377,6 +377,9 @@ export type MainTabParamList = {
 		flights?: Flight[]; // Legacy support
 		response?: FlightSearchResponse; // New format
 	};
+	Hotels: {
+		preselectedDestination?: HotelDestination;
+	};
 	Profile: undefined;
 };
 
@@ -513,4 +516,63 @@ export interface FlightDetailsParams {
 	market?: string;
 	cabinClass?: string;
 	countryCode?: string;
+}
+
+// Hotel Types (for hotel search and booking)
+export interface HotelDestination {
+	hierarchy: string;
+	location: string; // "latitude, longitude"
+	score: number;
+	entityName: string;
+	entityId: string;
+	entityType: 'city' | 'region' | 'airport' | 'hotel' | 'poi';
+	suggestItem: string; // HTML formatted suggestion with {strong} tags
+	class: string; // e.g., "City", "FirstLevelNationAdministrativeDivision", "Airport"
+	pois: any[] | null;
+}
+
+export interface HotelDestinationSearchResponse {
+	status: boolean;
+	timestamp: number;
+	data: HotelDestination[];
+}
+
+export interface HotelDestinationSearchParams {
+	query: string;
+	locale?: string;
+}
+
+export interface LocationCoordinates {
+	latitude: number;
+	longitude: number;
+}
+
+export interface ParsedLocation {
+	latitude: number;
+	longitude: number;
+}
+
+// Hotel Search Form Data
+export interface HotelSearchFormData {
+	destination: HotelDestination | null;
+	checkIn: Date | null;
+	checkOut: Date | null;
+	guests: {
+		adults: number;
+		children: number;
+		rooms: number;
+	};
+}
+
+// Hotel Search Filters
+export interface HotelSearchFilters {
+	priceRange: {
+		min: number;
+		max: number;
+	};
+	starRating: number[];
+	amenities: string[];
+	guestRating: number;
+	propertyType: string[];
+	sortBy: 'price' | 'rating' | 'distance' | 'popularity';
 } 

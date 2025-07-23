@@ -8,6 +8,7 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 import FlightSearchScreen from '../screens/main/FlightSearchScreen';
 import FlightResultsScreen from '../screens/main/FlightResultsScreen';
 import FlightDetailsScreen from '../screens/main/FlightDetailsScreen';
+import HotelSearchScreen from '../screens/main/HotelSearchScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import {NearbyAirportsScreen} from '../screens/main/NearbyAirportsScreen';
 import {LanguageSelector} from '../components/LanguageSelector';
@@ -29,6 +30,8 @@ const MainTabNavigator = () => {
 						iconName = focused ? 'magnify' : 'magnify';
 					} else if (route.name === 'Results') {
 						iconName = focused ? 'airplane' : 'airplane';
+					} else if (route.name === 'Hotels') {
+						iconName = focused ? 'bed' : 'bed-outline';
 					} else if (route.name === 'Profile') {
 						iconName = focused ? 'account' : 'account-outline';
 					} else {
@@ -44,6 +47,7 @@ const MainTabNavigator = () => {
 		>
 			<Tab.Screen name="Search" component={FlightSearchScreen} />
 			<Tab.Screen name="Results" component={FlightResultsScreen} />
+			<Tab.Screen name="Hotels" component={HotelSearchScreen} />
 			<Tab.Screen name="Profile" component={ProfileScreen} />
 		</Tab.Navigator>
 	);

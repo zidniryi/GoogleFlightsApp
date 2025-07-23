@@ -22,6 +22,7 @@ export {QuickAirportSelector} from './QuickAirportSelector';
 
 // Search Components
 export {AirportSearchInput} from './AirportSearchInput';
+export {HotelDestinationInput} from './HotelDestinationInput';
 
 // Flight Components
 export {FlightCard} from './FlightCard';
