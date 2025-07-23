@@ -198,9 +198,9 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 							</CustomText>
 						</View>
 
-						<View style={styles.scoreSection}>
-							<CustomText variant="bodySmall" color="secondary">
-								Score: {(itinerary.score * 100).toFixed(0)}%
+						<View style={styles.actionSection}>
+							<CustomText variant="bodySmall" color="primary" weight="medium">
+								Tap for details & booking →
 							</CustomText>
 						</View>
 					</View>
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		gap: 12,
 	},
-	scoreSection: {
+	actionSection: {
 		alignItems: 'flex-end',
 	},
 });

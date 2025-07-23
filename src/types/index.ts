@@ -344,9 +344,15 @@ export type RootStackParamList = {
 		onAirportSelect?: (airport: any) => void;
 	};
 	LanguageSelector: undefined;
-	FlightResults: {
-		searchParams: FlightSearchParams;
-		response: FlightSearchResponse;
+	FlightDetails: {
+		flightId: string;
+		legs: Array<{
+			destination: string;
+			origin: string;
+			date: string;
+		}>;
+		adults: number;
+		itinerary?: FlightItinerary; // Optional for quick preview
 	};
 };
 
@@ -385,4 +391,126 @@ export interface SignUpFormValues {
 	email: string;
 	password: string;
 	confirmPassword: string;
+}
+
+// Flight Details Types (for getFlightDetails API)
+export interface FlightDetailsLeg {
+	id: string;
+	origin: {
+		id: string;
+		name: string;
+		displayCode: string;
+		city: string;
+	};
+	destination: {
+		id: string;
+		name: string;
+		displayCode: string;
+		city: string;
+	};
+	segments: FlightDetailsSegment[];
+	duration: number;
+	stopCount: number;
+	departure: string; // ISO string
+	arrival: string; // ISO string
+	dayChange: number;
+}
+
+export interface FlightDetailsSegment {
+	id: string;
+	origin: {
+		id: string;
+		name: string;
+		displayCode: string;
+		city: string;
+	};
+	destination: {
+		id: string;
+		name: string;
+		displayCode: string;
+		city: string;
+	};
+	duration: number;
+	dayChange: number;
+	flightNumber: string;
+	departure: string; // ISO string
+	arrival: string; // ISO string
+	marketingCarrier: CarrierDetails;
+	operatingCarrier: CarrierDetails;
+}
+
+export interface CarrierDetails {
+	id: string;
+	name: string;
+	displayCode: string;
+	displayCodeType: string;
+	logo: string;
+	altId: string;
+}
+
+export interface BookingAgent {
+	id: string;
+	name: string;
+	isCarrier: boolean;
+	bookingProposition: string;
+	url: string;
+	price: number;
+	rating: {
+		value: number;
+		count: number;
+	};
+	updateStatus: string;
+	segments: FlightDetailsSegment[];
+	isDirectDBookUrl: boolean;
+	quoteAge: number;
+}
+
+export interface PricingOption {
+	agents: BookingAgent[];
+	totalPrice: number;
+}
+
+export interface SafetyAttributes {
+	carrierID: string;
+	carrierName: string;
+	faceMasksCompulsory: boolean | null;
+	aircraftDeepCleanedDaily: boolean | null;
+	attendantsWearPPE: boolean | null;
+	cleaningPacksProvided: boolean | null;
+	foodServiceChanges: boolean | null;
+	safetyUrl: string | null;
+}
+
+export interface FlightDetailsItinerary {
+	legs: FlightDetailsLeg[];
+	pricingOptions: PricingOption[];
+	isTransferRequired: boolean;
+	destinationImage: string;
+	operatingCarrierSafetyAttributes: SafetyAttributes[];
+	flexibleTicketPolicies: any[];
+}
+
+export interface FlightDetailsData {
+	itinerary: FlightDetailsItinerary;
+	pollingCompleted: boolean;
+}
+
+export interface FlightDetailsResponse {
+	status: boolean;
+	timestamp: number;
+	data: FlightDetailsData;
+}
+
+export interface FlightDetailsParams {
+	legs: Array<{
+		destination: string;
+		origin: string;
+		date: string;
+	}>;
+	adults: number;
+	currency?: string;
+	locale?: string;
+	market?: string;
+	cabinClass?: string;
+	countryCode?: string;
 } 

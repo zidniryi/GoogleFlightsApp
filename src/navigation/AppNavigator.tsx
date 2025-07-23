@@ -7,6 +7,7 @@ import {MaterialCommunityIcons} from '@expo/vector-icons';
 // Screens
 import FlightSearchScreen from '../screens/main/FlightSearchScreen';
 import FlightResultsScreen from '../screens/main/FlightResultsScreen';
+import FlightDetailsScreen from '../screens/main/FlightDetailsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import {NearbyAirportsScreen} from '../screens/main/NearbyAirportsScreen';
 import {LanguageSelector} from '../components/LanguageSelector';
@@ -82,6 +83,14 @@ const AppNavigator = () => {
 					options={{
 						title: 'Select Language',
 						presentation: 'modal',
+					}}
+				/>
+				<Stack.Screen
+					name="FlightDetails"
+					component={FlightDetailsScreen}
+					options={{
+						title: 'Flight Details',
+						presentation: 'card',
 					}}
 				/>
 			</Stack.Navigator>

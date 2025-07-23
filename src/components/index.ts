@@ -25,6 +25,7 @@ export {AirportSearchInput} from './AirportSearchInput';
 
 // Flight Components
 export {FlightCard} from './FlightCard';
+export {BookingAgentCard} from './BookingAgentCard';
 
 // Example/Demo Components
 export {ComponentShowcase} from './ComponentShowcase';

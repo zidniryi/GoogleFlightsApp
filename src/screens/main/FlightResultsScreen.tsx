@@ -16,13 +16,17 @@ import {
 	Card,
 } from 'react-native-paper';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
+import {CompositeNavigationProp, RouteProp} from '@react-navigation/native';
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {FlightCard, CustomText, LoadingSpinner, EmptyState} from '../../components';
-import {MainTabParamList, FlightItinerary, FlightSearchParams, FlightSearchResponse} from '../../types';
+import {MainTabParamList, RootStackParamList, FlightItinerary, FlightSearchParams, FlightSearchResponse} from '../../types';
 import {format} from 'date-fns';
 import {searchFlights} from '../../services/api';
 
-type FlightResultsScreenNavigationProp = StackNavigationProp<MainTabParamList, 'Results'>;
+type FlightResultsScreenNavigationProp = CompositeNavigationProp<
+	BottomTabNavigationProp<MainTabParamList, 'Results'>,
+	StackNavigationProp<RootStackParamList>
+>;
 type FlightResultsScreenRouteProp = RouteProp<MainTabParamList, 'Results'>;
 
 interface Props {
@@ -252,8 +256,19 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 							key={itinerary.id}
 							itinerary={itinerary}
 							onPress={() => {
-								// TODO: Navigate to flight details
-								console.log('Flight selected:', itinerary.id);
+								// Navigate to flight details
+								const legs = itinerary.legs.map(leg => ({
+									origin: leg.origin.displayCode,
+									destination: leg.destination.displayCode,
+									date: leg.departure.substring(0, 10), // YYYY-MM-DD format
+								}));
+
+								navigation.navigate('FlightDetails', {
+									flightId: itinerary.id,
+									legs,
+									adults: searchParams.adults,
+									itinerary, // Pass for quick preview
+								});
 							}}
 						/>
 					))}
