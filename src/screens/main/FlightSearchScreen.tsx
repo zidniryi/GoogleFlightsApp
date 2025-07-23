@@ -320,7 +320,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 													}
 												}
 											} : null}
-											style={styles.airportInput}
+											style={styles.modernInput}
 										/>
 										<HelperText type="error" visible={!selectedOrigin && touched.origin && !!errors.origin}>
 											{errors.origin}
@@ -328,12 +328,13 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 									</View>
 
 									{/* Swap Button - Between Inputs */}
-									<View style={styles.swapButtonContainer}>
+									<View style={styles.modernSwapContainer}>
 										<FAB
 											icon="swap-vertical"
 											size="small"
-											style={styles.swapButton}
+											style={styles.modernSwapButton}
 											onPress={() => swapAirports(values, setFieldValue)}
+											color="white"
 										/>
 									</View>
 
@@ -377,7 +378,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 													}
 												}
 											} : null}
-											style={styles.airportInput}
+											style={styles.modernInput}
 										/>
 										<HelperText type="error" visible={!selectedDestination && touched.destination && !!errors.destination}>
 											{errors.destination}
@@ -602,16 +603,16 @@ const styles = StyleSheet.create({
 	airportInputContainer: {
 		marginBottom: 12,
 	},
-	airportInput: {
+	modernInput: {
 		marginBottom: 4,
 	},
-	swapButtonContainer: {
+	modernSwapContainer: {
 		alignItems: 'center',
-		marginVertical: 12,
+		marginVertical: 16,
 		zIndex: 10,
 	},
-	swapButton: {
-		backgroundColor: '#e3f2fd',
+	modernSwapButton: {
+		backgroundColor: '#2563eb',
 		elevation: 4,
 	},
 	alternativeOptions: {

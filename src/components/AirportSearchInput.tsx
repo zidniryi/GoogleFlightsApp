@@ -1,13 +1,12 @@
 import React, {useState, useRef} from 'react';
 import {StyleSheet, View, ScrollView, Pressable, Platform, Modal} from 'react-native';
-import {TextInput, IconButton, Divider, Card, Chip, Portal} from 'react-native-paper';
+import {TextInput, Card, Chip, Portal} from 'react-native-paper';
 import {
 	CustomText,
 	LoadingSpinner,
-	EmptyState,
 } from './index';
 import {useAirportSearch} from '../hooks/useAirportSearch';
-import {SearchAirportResult, AirportSearchItem} from '../types';
+import {SearchAirportResult} from '../types';
 
 interface AirportSearchInputProps {
 	value: string;
@@ -210,14 +209,19 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 				placeholder={placeholder}
 				error={error}
 				disabled={disabled}
-				style={styles.textInput}
+				style={style}
 				left={
 					<TextInput.Icon
 						icon={selectedAirport ? "airplane" : "magnify"}
 					/>
 				}
 				right={
-					loading ? (
+					selectedAirport ? (
+						<TextInput.Icon
+							icon="check-circle"
+							color="#10b981"
+						/>
+					) : loading ? (
 						<TextInput.Icon icon="loading" />
 					) : value.length > 0 ? (
 						<TextInput.Icon
