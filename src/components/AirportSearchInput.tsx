@@ -1,10 +1,8 @@
 import React, {useState, useRef} from 'react';
 import {StyleSheet, View, ScrollView, Pressable, Platform, Modal} from 'react-native';
 import {TextInput, Card, Chip, Portal} from 'react-native-paper';
-import {
-	CustomText,
-	LoadingSpinner,
-} from './index';
+import {CustomText} from './CustomText';
+import {LoadingSpinner} from './LoadingSpinner';
 import {useAirportSearch} from '../hooks/useAirportSearch';
 import {SearchAirportResult} from '../types';
 

@@ -1,11 +1,9 @@
 import React from 'react';
 import {StyleSheet, View, ScrollView, Pressable} from 'react-native';
 import {IconButton} from 'react-native-paper';
-import {
-	CustomButton,
-	CustomText,
-	LoadingSpinner,
-} from './index';
+import {CustomButton} from './CustomButton';
+import {CustomText} from './CustomText';
+import {LoadingSpinner} from './LoadingSpinner';
 import {useNearbyAirports} from '../hooks/useNearbyAirports';
 import {NearbyAirport, CurrentAirport} from '../types';
 

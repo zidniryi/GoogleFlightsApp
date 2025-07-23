@@ -1,18 +1,12 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
-import {
-	CustomButton,
-	CustomText,
-	Heading1,
-	Heading2,
-	BodyText,
-	Caption,
-	CustomCard,
-	CustomInput,
-	LoadingSpinner,
-	EmptyState,
-	SafeAreaContainer,
-} from './index';
+import {CustomButton} from './CustomButton';
+import {CustomText, Heading1, Heading2, BodyText, Caption} from './CustomText';
+import {CustomCard} from './CustomCard';
+import {CustomInput} from './CustomInput';
+import {LoadingSpinner} from './LoadingSpinner';
+import {EmptyState} from './EmptyState';
+import {SafeAreaContainer} from './SafeAreaContainer';
 
 // Example component to showcase all reusable components
 export const ComponentShowcase: React.FC = () => {

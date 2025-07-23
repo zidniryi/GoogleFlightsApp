@@ -499,7 +499,7 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 						{/* Search Button */}
 						<View style={styles.searchContainer}>
 							<FAB
-								icon="car-search"
+								icon="car"
 								label="Search Cars"
 								onPress={() => handleSubmit()}
 								disabled={!isValid}

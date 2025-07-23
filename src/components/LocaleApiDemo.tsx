@@ -1,12 +1,10 @@
 import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
-import {
-	CustomButton,
-	CustomText,
-	CustomCard,
-	LoadingSpinner,
-	LanguageInline,
-} from './index';
+import {CustomButton} from './CustomButton';
+import {CustomText} from './CustomText';
+import {CustomCard} from './CustomCard';
+import {LoadingSpinner} from './LoadingSpinner';
+import {LanguageInline} from './LanguageSelector';
 import {useLocale} from '../context/LocaleContext';
 import {useLocalizedApi} from '../hooks/useLocalizedApi';
 import {getLocales} from '../services/api';

@@ -1,14 +1,12 @@
 import React, {useState} from 'react';
 import {StyleSheet, View, ScrollView, Pressable, Alert} from 'react-native';
 import {IconButton, Divider} from 'react-native-paper';
-import {
-	CustomButton,
-	CustomText,
-	CustomCard,
-	LoadingSpinner,
-	EmptyState,
-	SafeAreaContainer,
-} from './index';
+import {CustomButton} from './CustomButton';
+import {CustomText} from './CustomText';
+import {CustomCard} from './CustomCard';
+import {LoadingSpinner} from './LoadingSpinner';
+import {EmptyState} from './EmptyState';
+import {SafeAreaContainer} from './SafeAreaContainer';
 import {useGeolocationWithExpo} from '../hooks/useGeolocationWithExpo';
 import {useLocalizedApi} from '../hooks/useLocalizedApi';
 import {getNearbyAirports} from '../services/api';

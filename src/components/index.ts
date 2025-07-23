@@ -30,7 +30,4 @@ export {FlightCard} from './FlightCard';
 export {BookingAgentCard} from './BookingAgentCard';
 
 // Example/Demo Components
-export {ComponentShowcase} from './ComponentShowcase';
-
-// Screen Components
-export {NearbyAirportsScreen} from '../screens/main/NearbyAirportsScreen'; 
+export {ComponentShowcase} from './ComponentShowcase'; 

@@ -625,8 +625,9 @@ const styles = StyleSheet.create({
 	},
 	modernSwapContainer: {
 		alignItems: 'center',
-		marginVertical: 16,
+		marginBottom: 10,
 		zIndex: 10,
+		marginTop: -24
 	},
 	modernSwapButton: {
 		backgroundColor: '#2563eb',

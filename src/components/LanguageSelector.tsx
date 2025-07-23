@@ -3,14 +3,12 @@ import {StyleSheet, View, ScrollView, Pressable} from 'react-native';
 import {Modal, Portal, IconButton, Divider, Searchbar} from 'react-native-paper';
 import {useLocale} from '../context/LocaleContext';
 import {Locale} from '../types';
-import {
-	CustomButton,
-	CustomText,
-	CustomCard,
-	LoadingSpinner,
-	EmptyState,
-	SafeAreaContainer,
-} from './index';
+import {CustomButton} from './CustomButton';
+import {CustomText} from './CustomText';
+import {CustomCard} from './CustomCard';
+import {LoadingSpinner} from './LoadingSpinner';
+import {EmptyState} from './EmptyState';
+import {SafeAreaContainer} from './SafeAreaContainer';
 
 interface LanguageSelectorProps {
 	variant?: 'button' | 'card' | 'inline';
