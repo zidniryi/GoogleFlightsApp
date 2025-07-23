@@ -1,183 +1,289 @@
-import React from 'react';
+import React, {useState, useMemo} from 'react';
 import {
 	View,
 	StyleSheet,
-	FlatList,
-	TouchableOpacity,
+	ScrollView,
+	RefreshControl,
 } from 'react-native';
 import {
 	Text,
-	Card,
-	Title,
-	Subtitle,
-	Button,
+	Appbar,
+	FAB,
 	Chip,
 	Divider,
+	Button,
+	Menu,
+	Card,
 } from 'react-native-paper';
-import {Flight, FlightSearchParams} from '../../types';
-import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
-import {MainTabParamList} from '../../types';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RouteProp} from '@react-navigation/native';
+import {FlightCard, CustomText, LoadingSpinner, EmptyState} from '../../components';
+import {MainTabParamList, FlightItinerary, FlightSearchParams, FlightSearchResponse} from '../../types';
 import {format} from 'date-fns';
-import {Colors} from '../../themes/Colors';
+import {searchFlights} from '../../services/api';
 
-type FlightResultsScreenNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Results'>;
+type FlightResultsScreenNavigationProp = StackNavigationProp<MainTabParamList, 'Results'>;
+type FlightResultsScreenRouteProp = RouteProp<MainTabParamList, 'Results'>;
 
 interface Props {
 	navigation: FlightResultsScreenNavigationProp;
-	route: {
-		params?: {
-			searchParams: FlightSearchParams;
-			flights: Flight[];
-		};
-	};
+	route: FlightResultsScreenRouteProp;
 }
 
+type SortOption = 'best' | 'cheapest' | 'fastest' | 'departure';
+type FilterOption = 'all' | 'direct' | 'oneStop' | 'twoOrMore';
+
 const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
-	const {searchParams, flights} = route.params || {searchParams: null, flights: []};
+	const {searchParams, response: initialResponse} = route.params;
 
-	if (!searchParams || flights.length === 0) {
-		return (
-			<View style={styles.emptyContainer}>
-				<Title>No flights found</Title>
-				<Text style={styles.emptyText}>
-					Please go back and search for flights.
-				</Text>
-				<Button
-					mode="contained"
-					onPress={() => navigation.navigate('Search')}
-					style={styles.backButton}
-				>
-					Search Flights
-				</Button>
-			</View>
-		);
-	}
+	const [response, setResponse] = useState<FlightSearchResponse | null>(initialResponse || null);
+	const [loading, setLoading] = useState(!initialResponse);
+	const [refreshing, setRefreshing] = useState(false);
+	const [sortBy, setSortBy] = useState<SortOption>('best');
+	const [filterBy, setFilterBy] = useState<FilterOption>('all');
+	const [showSortMenu, setShowSortMenu] = useState(false);
 
-	const formatTime = (dateString: string) => {
-		return format(new Date(dateString), 'HH:mm');
+	// Load initial data if not provided
+	React.useEffect(() => {
+		if (!initialResponse) {
+			loadFlights();
+		}
+	}, []);
+
+	const loadFlights = async () => {
+		try {
+			setLoading(true);
+			const result = await searchFlights(searchParams);
+
+			if (result.success) {
+				setResponse(result.data);
+			} else {
+				console.error('Flight search failed:', result.error);
+			}
+		} catch (error) {
+			console.error('Flight search error:', error);
+		} finally {
+			setLoading(false);
+		}
 	};
 
-	const formatDate = (dateString: string) => {
-		return format(new Date(dateString), 'MMM dd');
+	const handleRefresh = async () => {
+		setRefreshing(true);
+		await loadFlights();
+		setRefreshing(false);
 	};
 
-	const renderFlightCard = ({item: flight}: {item: Flight}) => (
-		<TouchableOpacity
-			onPress={() => {
-				// Navigate to flight details - for now we'll show an alert
-				// In full implementation, this would navigate to a details screen
-				navigation.navigate('Search'); // Placeholder navigation
-			}}
-		>
-			<Card style={styles.flightCard}>
-				<Card.Content>
-					{/* Airline and Flight Number */}
-					<View style={styles.flightHeader}>
-						<Text style={styles.airline}>{flight.airline}</Text>
-						<Text style={styles.flightNumber}>{flight.flightNumber}</Text>
-					</View>
+	// Filtered and sorted itineraries
+	const processedItineraries = useMemo(() => {
+		if (!response?.data.itineraries) return [];
 
-					{/* Route and Times */}
-					<View style={styles.routeContainer}>
-						<View style={styles.timeContainer}>
-							<Text style={styles.time}>{formatTime(flight.departureTime)}</Text>
-							<Text style={styles.airport}>{flight.departureAirport}</Text>
-						</View>
+		let filtered = response.data.itineraries;
 
-						<View style={styles.durationContainer}>
-							<Text style={styles.duration}>{flight.duration}</Text>
-							<View style={styles.line} />
-							<Chip
-								mode="outlined"
-								compact
-								style={styles.stopsChip}
-							>
-								{flight.stops === 0 ? 'Direct' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
-							</Chip>
-						</View>
+		// Apply filters
+		switch (filterBy) {
+			case 'direct':
+				filtered = filtered.filter(it => it.legs.every(leg => leg.stopCount === 0));
+				break;
+			case 'oneStop':
+				filtered = filtered.filter(it => it.legs.some(leg => leg.stopCount === 1));
+				break;
+			case 'twoOrMore':
+				filtered = filtered.filter(it => it.legs.some(leg => leg.stopCount >= 2));
+				break;
+		}
 
-						<View style={styles.timeContainer}>
-							<Text style={styles.time}>{formatTime(flight.arrivalTime)}</Text>
-							<Text style={styles.airport}>{flight.arrivalAirport}</Text>
-						</View>
-					</View>
+		// Apply sorting
+		const sorted = [...filtered].sort((a, b) => {
+			switch (sortBy) {
+				case 'cheapest':
+					return a.price.raw - b.price.raw;
+				case 'fastest':
+					const aDuration = a.legs.reduce((sum, leg) => sum + leg.durationInMinutes, 0);
+					const bDuration = b.legs.reduce((sum, leg) => sum + leg.durationInMinutes, 0);
+					return aDuration - bDuration;
+				case 'departure':
+					return new Date(a.legs[0].departure).getTime() - new Date(b.legs[0].departure).getTime();
+				case 'best':
+				default:
+					return b.score - a.score;
+			}
+		});
 
-					<Divider style={styles.divider} />
+		return sorted;
+	}, [response, sortBy, filterBy]);
 
-					{/* Price and Book Button */}
-					<View style={styles.priceContainer}>
-						<View style={styles.priceInfo}>
-							<Text style={styles.priceLabel}>Total Price</Text>
-							<Text style={styles.price}>
-								{flight.currency} {flight.price}
-							</Text>
-						</View>
-						<Button
-							mode="contained"
-							compact
-							onPress={() => {
-								// Handle booking - placeholder for now
-								alert('Booking functionality would be implemented here');
-							}}
-						>
-							Select Flight
-						</Button>
-					</View>
-				</Card.Content>
-			</Card>
-		</TouchableOpacity>
+	const formatSearchSummary = () => {
+		if (!searchParams) return '';
+
+		const departDate = format(new Date(searchParams.date), 'MMM dd');
+		const returnText = searchParams.returnDate ? ` - ${format(new Date(searchParams.returnDate), 'MMM dd')}` : '';
+
+		return `${searchParams.originSkyId} → ${searchParams.destinationSkyId} • ${departDate}${returnText} • ${searchParams.adults} adult${searchParams.adults > 1 ? 's' : ''}`;
+	};
+
+	const getSortMenuItems = () => [
+		{label: 'Best', value: 'best'},
+		{label: 'Cheapest', value: 'cheapest'},
+		{label: 'Fastest', value: 'fastest'},
+		{label: 'Departure Time', value: 'departure'},
+	];
+
+	const getFilterChips = () => [
+		{label: 'All Flights', value: 'all'},
+		{label: 'Direct Only', value: 'direct'},
+		{label: '1 Stop', value: 'oneStop'},
+		{label: '2+ Stops', value: 'twoOrMore'},
+	];
+
+	const renderHeader = () => (
+		<Card style={styles.headerCard}>
+			<Card.Content>
+				<CustomText variant="titleMedium" weight="bold" style={styles.searchSummary}>
+					{formatSearchSummary()}
+				</CustomText>
+
+				{response && (
+					<CustomText variant="bodyMedium" color="secondary" style={styles.resultsCount}>
+						{response.data.context.totalResults} flights found
+						{response.data.context.status === 'incomplete' && ' (loading more...)'}
+					</CustomText>
+				)}
+			</Card.Content>
+		</Card>
 	);
+
+	const renderFilters = () => (
+		<View style={styles.filtersContainer}>
+			{/* Sort Menu */}
+			<Menu
+				visible={showSortMenu}
+				onDismiss={() => setShowSortMenu(false)}
+				anchor={
+					<Button
+						mode="outlined"
+						onPress={() => setShowSortMenu(true)}
+						icon="sort"
+						style={styles.sortButton}
+					>
+						Sort: {getSortMenuItems().find(item => item.value === sortBy)?.label}
+					</Button>
+				}
+			>
+				{getSortMenuItems().map((item) => (
+					<Menu.Item
+						key={item.value}
+						onPress={() => {
+							setSortBy(item.value as SortOption);
+							setShowSortMenu(false);
+						}}
+						title={item.label}
+					/>
+				))}
+			</Menu>
+
+			{/* Filter Chips */}
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
+				{getFilterChips().map((chip) => (
+					<Chip
+						key={chip.value}
+						mode={filterBy === chip.value ? 'flat' : 'outlined'}
+						selected={filterBy === chip.value}
+						onPress={() => setFilterBy(chip.value as FilterOption)}
+						style={styles.filterChip}
+					>
+						{chip.label}
+					</Chip>
+				))}
+			</ScrollView>
+		</View>
+	);
+
+	const renderContent = () => {
+		if (loading) {
+			return (
+				<View style={styles.centerContainer}>
+					<LoadingSpinner size="large" message="Searching flights..." />
+				</View>
+			);
+		}
+
+		if (!response || !response.data.itineraries.length) {
+			return (
+				<View style={styles.centerContainer}>
+					<EmptyState
+						title="No flights found"
+						description="Try adjusting your search criteria or dates"
+						actionLabel="New Search"
+						onAction={() => navigation.goBack()}
+					/>
+				</View>
+			);
+		}
+
+		if (!processedItineraries.length) {
+			return (
+				<View style={styles.centerContainer}>
+					<EmptyState
+						title="No flights match your filters"
+						description="Try adjusting your filter settings"
+						actionLabel="Clear Filters"
+						onAction={() => {
+							setSortBy('best');
+							setFilterBy('all');
+						}}
+					/>
+				</View>
+			);
+		}
+
+		return (
+			<ScrollView
+				style={styles.scrollView}
+				refreshControl={
+					<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+				}
+			>
+				{renderHeader()}
+				{renderFilters()}
+
+				<View style={styles.resultsContainer}>
+					{processedItineraries.map((itinerary) => (
+						<FlightCard
+							key={itinerary.id}
+							itinerary={itinerary}
+							onPress={() => {
+								// TODO: Navigate to flight details
+								console.log('Flight selected:', itinerary.id);
+							}}
+						/>
+					))}
+				</View>
+
+				{/* Loading more indicator */}
+				{response.data.context.status === 'incomplete' && (
+					<View style={styles.loadingMore}>
+						<LoadingSpinner size="small" message="Loading more results..." />
+					</View>
+				)}
+			</ScrollView>
+		);
+	};
 
 	return (
 		<View style={styles.container}>
-			{/* Search Summary */}
-			<Card style={styles.summaryCard}>
-				<Card.Content>
-					<View style={styles.summaryHeader}>
-						<Title style={styles.summaryTitle}>
-							{searchParams.origin} → {searchParams.destination}
-						</Title>
-						<Button
-							mode="outlined"
-							compact
-							onPress={() => navigation.navigate('Search')}
-							icon="pencil"
-						>
-							Edit
-						</Button>
-					</View>
-					<View style={styles.summaryDetails}>
-						<Text style={styles.summaryText}>
-							{formatDate(searchParams.departDate)}
-							{searchParams.returnDate && ` - ${formatDate(searchParams.returnDate)}`}
-						</Text>
-						<Text style={styles.summaryText}>
-							{searchParams.adults} Adult{searchParams.adults > 1 ? 's' : ''}
-						</Text>
-						<Text style={styles.summaryText}>
-							{searchParams.tripType === 'roundTrip' ? 'Round Trip' : 'One Way'}
-						</Text>
-					</View>
-				</Card.Content>
-			</Card>
+			<Appbar.Header>
+				<Appbar.BackAction onPress={() => navigation.goBack()} />
+				<Appbar.Content title="Flight Results" />
+			</Appbar.Header>
 
-			{/* Results Header */}
-			<View style={styles.resultsHeader}>
-				<Title style={styles.resultsTitle}>
-					{flights.length} Flight{flights.length > 1 ? 's' : ''} Found
-				</Title>
-				<Text style={styles.resultsSubtitle}>
-					Sorted by best value
-				</Text>
-			</View>
+			{renderContent()}
 
-			{/* Flight List */}
-			<FlatList
-				data={flights}
-				renderItem={renderFlightCard}
-				keyExtractor={(item) => item.id}
-				contentContainerStyle={styles.listContainer}
-				showsVerticalScrollIndicator={false}
+			{/* New Search FAB */}
+			<FAB
+				icon="magnify"
+				label="New Search"
+				style={styles.fab}
+				onPress={() => navigation.goBack()}
 			/>
 		</View>
 	);
@@ -186,137 +292,58 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: Colors.background.default,
+		backgroundColor: '#f5f5f5',
 	},
-	emptyContainer: {
+	centerContainer: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
 		padding: 20,
 	},
-	emptyText: {
-		textAlign: 'center',
-		fontSize: 16,
-		color: Colors.text.secondary,
-		marginBottom: 20,
+	scrollView: {
+		flex: 1,
 	},
-	backButton: {
-		marginTop: 10,
-	},
-	summaryCard: {
+	headerCard: {
 		margin: 16,
 		marginBottom: 8,
-		elevation: 2,
 	},
-	summaryHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 8,
+	searchSummary: {
+		marginBottom: 4,
 	},
-	summaryTitle: {
-		fontSize: 18,
-		fontWeight: 'bold',
+	resultsCount: {
+		marginBottom: 0,
 	},
-	summaryDetails: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		gap: 16,
-	},
-	summaryText: {
-		fontSize: 14,
-		color: Colors.text.secondary,
-	},
-	resultsHeader: {
-		paddingHorizontal: 16,
+	filtersContainer: {
+		padding: 16,
+		paddingTop: 8,
 		paddingBottom: 8,
-	},
-	resultsTitle: {
-		fontSize: 20,
-		fontWeight: 'bold',
-	},
-	resultsSubtitle: {
-		fontSize: 14,
-		color: Colors.text.secondary,
-	},
-	listContainer: {
-		paddingHorizontal: 16,
-		paddingBottom: 20,
-	},
-	flightCard: {
-		marginBottom: 12,
-		elevation: 2,
-	},
-	flightHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 16,
-	},
-	airline: {
-		fontSize: 16,
-		fontWeight: 'bold',
-	},
-	flightNumber: {
-		fontSize: 14,
-		color: '#666',
-	},
-	routeContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 16,
-	},
-	timeContainer: {
-		flex: 1,
-		alignItems: 'center',
-	},
-	time: {
-		fontSize: 18,
-		fontWeight: 'bold',
-	},
-	airport: {
-		fontSize: 12,
-		color: '#666',
-		marginTop: 2,
-	},
-	durationContainer: {
-		flex: 2,
-		alignItems: 'center',
-		paddingHorizontal: 16,
-	},
-	duration: {
-		fontSize: 12,
-		color: '#666',
-		marginBottom: 4,
-	},
-	line: {
-		height: 1,
-		backgroundColor: '#ddd',
-		width: '100%',
-		marginBottom: 4,
-	},
-	stopsChip: {
 		backgroundColor: '#fff',
+		borderBottomWidth: 1,
+		borderBottomColor: '#e0e0e0',
 	},
-	divider: {
-		marginBottom: 16,
+	sortButton: {
+		marginBottom: 12,
+		alignSelf: 'flex-start',
 	},
-	priceContainer: {
+	filterChips: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
+	},
+	filterChip: {
+		marginRight: 8,
+	},
+	resultsContainer: {
+		padding: 16,
+		paddingTop: 8,
+	},
+	loadingMore: {
+		padding: 20,
 		alignItems: 'center',
 	},
-	priceInfo: {
-		flex: 1,
-	},
-	priceLabel: {
-		fontSize: 12,
-		color: Colors.text.secondary,
-	},
-	price: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: Colors.primary.main,
+	fab: {
+		position: 'absolute',
+		margin: 16,
+		right: 0,
+		bottom: 0,
 	},
 });
 

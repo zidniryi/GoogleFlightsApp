@@ -19,7 +19,7 @@ import {
 import {Formik} from 'formik';
 import * as Yup from 'yup';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {FlightSearchFormValues, FlightSearchParams} from '../../types';
+import {FlightSearchFormValues, FlightSearchParams, SearchAirportResult} from '../../types';
 import {searchFlights, getMockFlights} from '../../services/api';
 import {format} from 'date-fns';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
@@ -40,6 +40,13 @@ interface Props {
 	route: FlightSearchScreenRouteProp;
 }
 
+interface SelectedAirport {
+	skyId: string;
+	entityId: string;
+	name: string;
+	displayCode: string;
+}
+
 // Validation Schema
 const searchValidationSchema = Yup.object().shape({
 	origin: Yup.string().required('Departure airport is required'),
@@ -52,6 +59,10 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 	const [loading, setLoading] = useState(false);
 	const [showDepartDatePicker, setShowDepartDatePicker] = useState(false);
 	const [showReturnDatePicker, setShowReturnDatePicker] = useState(false);
+
+	// Selected airports with full details
+	const [selectedOrigin, setSelectedOrigin] = useState<SelectedAirport | null>(null);
+	const [selectedDestination, setSelectedDestination] = useState<SelectedAirport | null>(null);
 
 	// Get preselected airports from navigation params
 	const preselectedDeparture = route.params?.preselectedDeparture;
@@ -67,28 +78,41 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 	};
 
 	const handleSearch = async (values: FlightSearchFormValues) => {
+		// Validate that we have complete airport information
+		if (!selectedOrigin || !selectedDestination) {
+			Alert.alert(
+				'Airport Information Required',
+				'Please select airports using the search to get complete flight information.'
+			);
+			return;
+		}
+
 		setLoading(true);
 		try {
 			const searchParams: FlightSearchParams = {
-				origin: values.origin,
-				destination: values.destination,
-				departDate: values.departDate,
-				returnDate: values.tripType === 'roundTrip' ? values.returnDate : undefined,
+				originSkyId: selectedOrigin.skyId,
+				destinationSkyId: selectedDestination.skyId,
+				originEntityId: selectedOrigin.entityId,
+				destinationEntityId: selectedDestination.entityId,
+				date: values.departDate,
+				...(values.tripType === 'roundTrip' && {returnDate: values.returnDate}),
 				adults: values.adults,
-				tripType: values.tripType,
+				cabinClass: 'economy',
+				sortBy: 'best',
+				currency: 'USD',
+				market: 'en-US',
+				countryCode: 'US',
 			};
 
-			// For demo purposes, use mock data
-			// In production, use: const response = await searchFlights(searchParams);
-			const response = getMockFlights();
+			const response = await searchFlights(searchParams);
 
 			if (response.success) {
 				navigation.navigate('Results', {
 					searchParams,
-					flights: response.data.flights,
+					response: response.data,
 				});
 			} else {
-				Alert.alert('Search Failed', 'Unable to search flights. Please try again.');
+				Alert.alert('Search Failed', response.error || 'Unable to search flights. Please try again.');
 			}
 		} catch (error: any) {
 			Alert.alert('Search Error', error.message);
@@ -98,30 +122,55 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 	};
 
 	const swapAirports = (values: FlightSearchFormValues, setFieldValue: any) => {
-		const temp = values.origin;
+		// Swap form values
+		const tempOrigin = values.origin;
 		setFieldValue('origin', values.destination);
-		setFieldValue('destination', temp);
+		setFieldValue('destination', tempOrigin);
+
+		// Swap selected airports
+		const tempSelected = selectedOrigin;
+		setSelectedOrigin(selectedDestination);
+		setSelectedDestination(tempSelected);
 	};
 
 	// Handle airport selection from nearby airports
 	const handleAirportSelect = (airport: any, field: 'origin' | 'destination', setFieldValue: any) => {
-		const airportCode = airport.navigation.relevantFlightParams.skyId;
-		setFieldValue(field, airportCode);
+		const airportInfo: SelectedAirport = {
+			skyId: airport.navigation.relevantFlightParams.skyId,
+			entityId: airport.navigation.relevantFlightParams.entityId,
+			name: airport.presentation.title,
+			displayCode: airport.navigation.relevantFlightParams.skyId,
+		};
+
+		if (field === 'origin') {
+			setSelectedOrigin(airportInfo);
+		} else {
+			setSelectedDestination(airportInfo);
+		}
+
+		setFieldValue(field, airportInfo.displayCode);
 		Alert.alert(
 			'Airport Selected',
-			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airport.presentation.title} (${airportCode})`
+			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airportInfo.name} (${airportInfo.displayCode})`
 		);
 	};
 
 	// Handle airport selection from search
-	const handleSearchAirportSelect = (airport: any, field: 'origin' | 'destination', setFieldValue: any) => {
-		const airportCode = airport.skyId;
-		const airportName = airport.presentation.title;
-		setFieldValue(field, airportCode);
-		Alert.alert(
-			'Airport Selected',
-			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airportName} (${airportCode})`
-		);
+	const handleSearchAirportSelect = (airport: SearchAirportResult, field: 'origin' | 'destination', setFieldValue: any) => {
+		const airportInfo: SelectedAirport = {
+			skyId: airport.skyId,
+			entityId: airport.entityId,
+			name: airport.presentation.title,
+			displayCode: airport.skyId,
+		};
+
+		if (field === 'origin') {
+			setSelectedOrigin(airportInfo);
+		} else {
+			setSelectedDestination(airportInfo);
+		}
+
+		setFieldValue(field, airportInfo.displayCode);
 	};
 
 	// Handle navigation reset when screen comes into focus
@@ -135,6 +184,19 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 
 		return unsubscribe;
 	}, [navigation, route.params]);
+
+	const renderSelectedAirportInfo = (airport: SelectedAirport | null, label: string) => {
+		if (!airport) return null;
+
+		return (
+			<View style={styles.selectedAirportInfo}>
+				<Text style={styles.selectedAirportLabel}>{label}:</Text>
+				<Text style={styles.selectedAirportText}>
+					{airport.name} ({airport.displayCode})
+				</Text>
+			</View>
+		);
+	};
 
 	return (
 		<ScrollView style={styles.container}>
@@ -232,7 +294,13 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 										<AirportSearchInput
 											label="From"
 											value={values.origin}
-											onValueChange={(value) => setFieldValue('origin', value)}
+											onValueChange={(value) => {
+												setFieldValue('origin', value);
+												// Clear selected origin if user is typing manually
+												if (value !== selectedOrigin?.displayCode) {
+													setSelectedOrigin(null);
+												}
+											}}
 											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'origin', setFieldValue)}
 											placeholder="Search departure airport..."
 											error={touched.origin && !!errors.origin}
@@ -241,6 +309,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 										<HelperText type="error" visible={touched.origin && !!errors.origin}>
 											{errors.origin}
 										</HelperText>
+										{renderSelectedAirportInfo(selectedOrigin, 'Selected Departure')}
 									</View>
 
 									<FAB
@@ -254,7 +323,13 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 										<AirportSearchInput
 											label="To"
 											value={values.destination}
-											onValueChange={(value) => setFieldValue('destination', value)}
+											onValueChange={(value) => {
+												setFieldValue('destination', value);
+												// Clear selected destination if user is typing manually
+												if (value !== selectedDestination?.displayCode) {
+													setSelectedDestination(null);
+												}
+											}}
 											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'destination', setFieldValue)}
 											placeholder="Search arrival airport..."
 											error={touched.destination && !!errors.destination}
@@ -263,6 +338,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 										<HelperText type="error" visible={touched.destination && !!errors.destination}>
 											{errors.destination}
 										</HelperText>
+										{renderSelectedAirportInfo(selectedDestination, 'Selected Arrival')}
 									</View>
 								</View>
 
@@ -410,13 +486,19 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 							mode="contained"
 							onPress={handleSubmit as any}
 							loading={loading}
-							disabled={!isValid || loading}
+							disabled={!isValid || loading || !selectedOrigin || !selectedDestination}
 							style={styles.searchButton}
 							contentStyle={styles.searchButtonContent}
 							icon="airplane"
 						>
 							Search Flights
 						</Button>
+
+						{(!selectedOrigin || !selectedDestination) && (
+							<HelperText type="info" visible style={styles.searchHelp}>
+								Please select airports using the search above to enable flight search
+							</HelperText>
+						)}
 					</View>
 				)}
 			</Formik>
@@ -479,6 +561,23 @@ const styles = StyleSheet.create({
 	airportInput: {
 		marginHorizontal: 8,
 	},
+	selectedAirportInfo: {
+		marginTop: 8,
+		marginHorizontal: 8,
+		padding: 8,
+		backgroundColor: '#e3f2fd',
+		borderRadius: 4,
+	},
+	selectedAirportLabel: {
+		fontSize: 12,
+		color: '#1976d2',
+		fontWeight: 'bold',
+	},
+	selectedAirportText: {
+		fontSize: 14,
+		color: '#1976d2',
+		marginTop: 2,
+	},
 	swapButton: {
 		alignSelf: 'center',
 		marginHorizontal: 8,
@@ -534,10 +633,14 @@ const styles = StyleSheet.create({
 	},
 	searchButton: {
 		marginTop: 24,
-		marginBottom: 32,
+		marginBottom: 8,
 	},
 	searchButtonContent: {
 		paddingVertical: 12,
+	},
+	searchHelp: {
+		textAlign: 'center',
+		marginBottom: 32,
 	},
 });
 

@@ -2,159 +2,89 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {ActivityIndicator, View} from 'react-native';
-import {Icon} from 'react-native-paper';
+import {MaterialCommunityIcons} from '@expo/vector-icons';
 
-import {useAuth} from '../context/AuthContext';
-import {RootStackParamList, AuthStackParamList, MainTabParamList} from '../types';
-
-// Auth Screens
-import SignInScreen from '../screens/auth/SignInScreen';
-import SignUpScreen from '../screens/auth/SignUpScreen';
-
-// Main Screens
+// Screens
 import FlightSearchScreen from '../screens/main/FlightSearchScreen';
 import FlightResultsScreen from '../screens/main/FlightResultsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
-import NearbyAirportsScreen from '../screens/main/NearbyAirportsScreen';
-import LanguageScreen from '../screens/main/LanguageScreen';
-import Colors from "../themes/Colors";
+import {NearbyAirportsScreen} from '../screens/main/NearbyAirportsScreen';
+import {LanguageSelector} from '../components/LanguageSelector';
 
-const RootStack = createStackNavigator<RootStackParamList>();
-const AuthStack = createStackNavigator<AuthStackParamList>();
-const MainTab = createBottomTabNavigator<MainTabParamList>();
+// Types
+import {RootStackParamList, MainTabParamList} from '../types';
 
-// Auth Navigator
-const AuthNavigator = () => {
-	return (
-		<AuthStack.Navigator
-			screenOptions={{
-				headerShown: false,
-			}}
-		>
-			<AuthStack.Screen name="SignIn" component={SignInScreen} />
-			<AuthStack.Screen name="SignUp" component={SignUpScreen} />
-		</AuthStack.Navigator>
-	);
-};
+const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Main Tab Navigator
 const MainTabNavigator = () => {
 	return (
-		<MainTab.Navigator
+		<Tab.Navigator
 			screenOptions={({route}) => ({
 				tabBarIcon: ({focused, color, size}) => {
-					let iconName: string;
+					let iconName: keyof typeof MaterialCommunityIcons.glyphMap;
 
 					if (route.name === 'Search') {
-						iconName = 'airplane-search';
+						iconName = focused ? 'magnify' : 'magnify';
 					} else if (route.name === 'Results') {
-						iconName = 'format-list-bulleted';
+						iconName = focused ? 'airplane' : 'airplane';
 					} else if (route.name === 'Profile') {
-						iconName = 'account';
+						iconName = focused ? 'account' : 'account-outline';
 					} else {
-						iconName = 'help';
+						iconName = 'circle';
 					}
 
-					return <Icon source={iconName} size={size} color={color} />;
+					return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
 				},
-				tabBarActiveTintColor: Colors.primary.main,
-				tabBarInactiveTintColor: Colors.text.secondary,
-				headerStyle: {
-					backgroundColor: Colors.primary.main,
-				},
-				headerTintColor: Colors.text.inverse,
-				headerTitleStyle: {
-					fontWeight: 'bold',
-				},
+				tabBarActiveTintColor: '#2196F3',
+				tabBarInactiveTintColor: 'gray',
+				headerShown: false,
 			})}
 		>
-			<MainTab.Screen
-				name="Search"
-				component={FlightSearchScreen}
-				options={{
-					title: 'Search Flights',
-					tabBarLabel: 'Search',
-				}}
-			/>
-			<MainTab.Screen
-				name="Results"
-				component={FlightResultsScreen}
-				options={{
-					title: 'Flight Results',
-					tabBarLabel: 'Results',
-				}}
-			/>
-			<MainTab.Screen
-				name="Profile"
-				component={ProfileScreen}
-				options={{
-					title: 'Profile',
-					tabBarLabel: 'Profile',
-				}}
-			/>
-		</MainTab.Navigator>
+			<Tab.Screen name="Search" component={FlightSearchScreen} />
+			<Tab.Screen name="Results" component={FlightResultsScreen} />
+			<Tab.Screen name="Profile" component={ProfileScreen} />
+		</Tab.Navigator>
 	);
 };
 
-// Loading Screen
-const LoadingScreen = () => {
-	return (
-		<View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background.default}}>
-			<ActivityIndicator size="large" color={Colors.primary.main} />
-		</View>
-	);
-};
-
-// Root Navigator
 const AppNavigator = () => {
-	const {user, loading} = useAuth();
-
-	if (loading) {
-		return <LoadingScreen />;
-	}
-
 	return (
 		<NavigationContainer>
-			<RootStack.Navigator screenOptions={{headerShown: false}}>
-				{user ? (
-					<>
-						<RootStack.Screen name="Main" component={MainTabNavigator} />
-						<RootStack.Screen
-							name="NearbyAirports"
-							component={NearbyAirportsScreen}
-							options={{
-								headerShown: true,
-								title: 'Nearby Airports',
-								headerStyle: {
-									backgroundColor: Colors.primary.main,
-								},
-								headerTintColor: Colors.text.inverse,
-								headerTitleStyle: {
-									fontWeight: 'bold',
-								},
-							}}
-						/>
-						<RootStack.Screen
-							name="LanguageSelector"
-							component={LanguageScreen}
-							options={{
-								headerShown: true,
-								title: 'Language Settings',
-								headerStyle: {
-									backgroundColor: Colors.primary.main,
-								},
-								headerTintColor: Colors.text.inverse,
-								headerTitleStyle: {
-									fontWeight: 'bold',
-								},
-							}}
-						/>
-					</>
-				) : (
-					<RootStack.Screen name="Auth" component={AuthNavigator} />
-				)}
-			</RootStack.Navigator>
+			<Stack.Navigator
+				initialRouteName="Main"
+				screenOptions={{
+					headerStyle: {
+						backgroundColor: '#2196F3',
+					},
+					headerTintColor: '#fff',
+					headerTitleStyle: {
+						fontWeight: 'bold',
+					},
+				}}
+			>
+				<Stack.Screen
+					name="Main"
+					component={MainTabNavigator}
+					options={{headerShown: false}}
+				/>
+				<Stack.Screen
+					name="NearbyAirports"
+					component={NearbyAirportsScreen}
+					options={{
+						title: 'Nearby Airports',
+						presentation: 'modal',
+					}}
+				/>
+				<Stack.Screen
+					name="LanguageSelector"
+					component={LanguageSelector}
+					options={{
+						title: 'Select Language',
+						presentation: 'modal',
+					}}
+				/>
+			</Stack.Navigator>
 		</NavigationContainer>
 	);
 };

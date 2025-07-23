@@ -45,16 +45,28 @@ const apiGet = async <T>(endpoint: string, params?: Record<string, any>): Promis
 	}
 };
 
-// Flight search with enhanced locale support
+// Flight search with real API parameters
 export const searchFlights = async (
 	params: FlightSearchParams,
 	locale?: string
 ): Promise<ApiResponse<FlightSearchResponse>> => {
 	const searchParams = {
-		...params,
-		locale: locale || 'en-US',
+		originSkyId: params.originSkyId,
+		destinationSkyId: params.destinationSkyId,
+		originEntityId: params.originEntityId,
+		destinationEntityId: params.destinationEntityId,
+		date: params.date,
+		...(params.returnDate && {returnDate: params.returnDate}),
+		cabinClass: params.cabinClass || 'economy',
+		adults: params.adults,
+		...(params.children && {children: params.children}),
+		...(params.infants && {infants: params.infants}),
+		sortBy: params.sortBy || 'best',
+		currency: params.currency || 'USD',
+		market: locale || params.market || 'en-US',
+		countryCode: params.countryCode || 'US',
 	};
-	return apiGet<FlightSearchResponse>('/api/v1/flights/search', searchParams);
+	return apiGet<FlightSearchResponse>('/api/v1/flights/searchFlights', searchParams);
 };
 
 // Airport suggestions with locale support
@@ -104,44 +116,98 @@ export const searchAirports = async (
 	return apiGet<SearchAirportResponse>('/api/v1/flights/searchAirport', params);
 };
 
-// Mock flight data for development/testing
-export const getMockFlights = (): ApiResponse<FlightSearchResponse> => {
+// Mock flight data for development/testing (using legacy format)
+export const getMockFlights = (): ApiResponse<any> => {
 	return {
 		success: true,
 		data: {
-			flights: [
-				{
-					id: '1',
-					airline: 'Delta Airlines',
-					flightNumber: 'DL123',
-					departureAirport: 'JFK',
-					arrivalAirport: 'LAX',
-					departureTime: '08:00',
-					arrivalTime: '11:30',
-					duration: '5h 30m',
-					price: 299,
-					stops: 0,
-					currency: 'USD',
-					available: true,
+			status: true,
+			timestamp: Date.now(),
+			sessionId: 'mock-session-123',
+			data: {
+				context: {
+					status: 'complete',
+					totalResults: 2,
 				},
-				{
-					id: '2',
-					airline: 'American Airlines',
-					flightNumber: 'AA456',
-					departureAirport: 'JFK',
-					arrivalAirport: 'LAX',
-					departureTime: '14:30',
-					arrivalTime: '18:15',
-					duration: '5h 45m',
-					price: 349,
-					stops: 1,
-					currency: 'USD',
-					available: true,
+				itineraries: [
+					{
+						id: 'mock-1',
+						price: {
+							raw: 299,
+							formatted: '$299',
+						},
+						legs: [
+							{
+								id: 'mock-leg-1',
+								origin: {
+									id: 'JFK',
+									name: 'New York John F. Kennedy',
+									displayCode: 'JFK',
+									city: 'New York',
+									isHighlighted: false,
+								},
+								destination: {
+									id: 'LAX',
+									name: 'Los Angeles',
+									displayCode: 'LAX',
+									city: 'Los Angeles',
+									isHighlighted: false,
+								},
+								durationInMinutes: 330,
+								stopCount: 0,
+								isSmallestStops: true,
+								departure: '2024-02-20T08:00:00',
+								arrival: '2024-02-20T11:30:00',
+								timeDeltaInDays: 0,
+								carriers: {
+									marketing: [
+										{
+											id: 1,
+											logoUrl: 'https://logos.skyscnr.com/images/airlines/favicon/DL.png',
+											name: 'Delta Airlines',
+										},
+									],
+									operationType: 'fully_operated',
+								},
+								segments: [],
+							},
+						],
+						isSelfTransfer: false,
+						isProtectedSelfTransfer: false,
+						farePolicy: {
+							isChangeAllowed: false,
+							isPartiallyChangeable: false,
+							isCancellationAllowed: false,
+							isPartiallyRefundable: false,
+						},
+						tags: ['cheapest', 'fastest'],
+						isMashUp: false,
+						hasFlexibleOptions: false,
+						score: 0.95,
+					},
+				],
+				messages: [],
+				filterStats: {
+					duration: {
+						min: 330,
+						max: 400,
+					},
+					airports: [],
+					carriers: [],
+					stopPrices: {
+						direct: {
+							isPresent: true,
+							formattedPrice: '$299',
+						},
+						one: {
+							isPresent: false,
+						},
+						twoOrMore: {
+							isPresent: false,
+						},
+					},
 				},
-			],
-			searchId: 'mock-search-123',
-			totalResults: 2,
-			currency: 'USD',
+			},
 		},
 		error: undefined,
 	};

@@ -1,263 +1,277 @@
-# Google Flights App - React Native
+# 🛫 Google Flights App - React Native
 
-A comprehensive flight booking application built with React Native, Expo, and TypeScript featuring location-based airport discovery.
+A comprehensive flight booking application built with React Native and Expo, featuring real-time airport search, nearby airports discovery, and complete flight search functionality using the Sky Scrapper API.
 
 ## ✨ Features
 
-### 🛫 Flight Search & Booking
-- **Advanced Search**: Round-trip and one-way flights with date selection
-- **Flight Results**: Detailed flight information with pricing
-- **Mock Data**: Integrated mock flight data for development
+### 🔍 **Intelligent Airport Search**
+- **Real-time autocomplete** with debounced search (300ms)
+- **Multi-entity support**: Search airports, cities, and countries
+- **Visual categorization** with icons (✈️ Airports, 🏙️ Cities, 🌍 Countries)
+- **Smart airport codes** display (JFK, LAX, etc.)
+- **Grouped results** for better UX
 
-### 📍 **Nearby Airports (NEW)**
-- **GPS Location**: Automatic location detection using device GPS
-- **Smart Discovery**: Find airports near your current location
-- **Beautiful UI**: Modern card-based interface with airport icons
-- **Quick Selection**: Horizontal scroll component for easy integration
-- **Booking Integration**: Direct integration with flight search
-- **Cross-Platform**: Works on iOS, Android, and Web (Expo)
+### 📍 **Location-Based Discovery**
+- **GPS-powered nearby airports** using device location
+- **Cross-platform geolocation** with `expo-location` and `@react-native-community/geolocation`
+- **Smart permission handling** for iOS and Android
+- **Quick selection** horizontal scroll interface
+- **Fallback support** for web and location-disabled devices
 
-### 🌍 Multi-Language Support
-- **Language Selector**: Beautiful modal with search functionality
-- **Popular Languages**: Quick access grid for common languages
-- **API Integration**: Automatic locale injection into API calls
-- **Persistent Settings**: User language preference saved locally
+### ✈️ **Complete Flight Search**
+- **Real Sky Scrapper API integration** with proper parameters
+- **Round-trip and one-way** flight support
+- **Advanced filtering**: Direct flights, 1 stop, 2+ stops
+- **Smart sorting**: Best, Cheapest, Fastest, Departure time
+- **Real-time results** with loading states
+- **Beautiful flight cards** with airline logos and route visualization
 
-### 🔧 Reusable Components
-- **Design System**: Complete UI component library
-- **TypeScript**: Full type safety throughout
-- **Material Design**: React Native Paper integration
-- **Customizable**: Flexible props and styling options
+### 🌍 **Multi-language Support**
+- **Dynamic locale switching** with 40+ languages
+- **Automatic API localization** for all search requests
+- **Persistent language preferences**
+- **RTL support ready**
 
-### 🚀 Modern Architecture
-- **Context API**: Global state management
-- **Custom Hooks**: Reusable business logic
-- **Error Handling**: Comprehensive error boundaries
-- **Navigation**: Stack and tab navigation with TypeScript
+### 🎨 **Modern UI/UX**
+- **Material Design 3** with React Native Paper
+- **Custom reusable components** with TypeScript
+- **Responsive layouts** for all screen sizes
+- **Loading states** and error handling
+- **Professional airline branding** with logos and colors
 
-## 🏗️ Tech Stack
-
-- **React Native** with Expo
-- **TypeScript** for type safety
-- **React Native Paper** for UI components
-- **React Navigation 6** for navigation
-- **Expo Location** for geolocation
-- **AsyncStorage** for data persistence
-- **Axios** for API calls
-- **Formik & Yup** for form handling
-
-## 📱 App Structure
-
-```
-GoogleFlightsApp/
-├── src/
-│   ├── components/           # Reusable UI components
-│   │   ├── CustomButton.tsx
-│   │   ├── CustomText.tsx
-│   │   ├── NearbyAirports.tsx      # 📍 NEW
-│   │   ├── QuickAirportSelector.tsx # 📍 NEW
-│   │   └── LanguageSelector.tsx
-│   ├── hooks/                # Custom React hooks
-│   │   ├── useGeolocation.ts       # 📍 NEW
-│   │   ├── useNearbyAirports.ts    # 📍 NEW
-│   │   └── useLocalizedApi.ts
-│   ├── screens/              # App screens
-│   │   ├── main/
-│   │   │   ├── FlightSearchScreen.tsx
-│   │   │   ├── NearbyAirportsScreen.tsx # 📍 NEW
-│   │   │   └── ProfileScreen.tsx
-│   │   └── auth/
-│   ├── services/             # API and external services
-│   │   └── api.ts
-│   ├── context/              # React Context providers
-│   │   ├── AuthContext.tsx
-│   │   └── LocaleContext.tsx
-│   └── types/                # TypeScript type definitions
-└── docs/                     # Documentation
-    └── NEARBY_AIRPORTS_FEATURE.md # 📍 NEW
-```
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js (v16 or higher)
-- npm or yarn
-- Expo CLI
-- iOS Simulator / Android Emulator (optional)
+- Node.js 16+ and npm/yarn
+- Expo CLI: `npm install -g @expo/cli`
+- Sky Scrapper API key from [RapidAPI](https://rapidapi.com/3b-data-3b-data-default/api/sky-scrapper)
 
 ### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd GoogleFlightsApp
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   # Create .env file
-   EXPO_PUBLIC_RAPIDAPI_KEY=your_rapidapi_key_here
-   ```
-
-4. **Start the development server**
-   ```bash
-   npx expo start
-   ```
-
-5. **Run on device/simulator**
-   - **iOS**: Press `i` in terminal or scan QR code with Camera app
-   - **Android**: Press `a` in terminal or scan QR code with Expo Go
-   - **Web**: Press `w` in terminal
-
-## 🌟 Nearby Airports Feature
-
-### Quick Integration
-
-```typescript
-import { NearbyAirports, QuickAirportSelector } from '../components';
-
-// Full component
-<NearbyAirports 
-  onAirportSelect={(airport) => console.log(airport)}
-  maxAirports={8}
-/>
-
-// Compact version
-<QuickAirportSelector 
-  compact={true}
-  maxAirports={5}
-  onAirportSelect={(airport) => setAirport(airport)}
-/>
-```
-
-### Custom Hook Usage
-
-```typescript
-import { useNearbyAirports } from '../hooks';
-
-const { 
-  coordinates, 
-  currentAirport, 
-  nearbyAirports, 
-  getCurrentLocation 
-} = useNearbyAirports(true); // Auto-fetch enabled
-```
-
-### Navigation Integration
-
-```typescript
-// Navigate to airport selector
-navigation.navigate('NearbyAirports', {
-  selectionMode: 'departure', // or 'arrival'
-});
-
-// Results in flight search pre-filled
-navigation.navigate('Main', {
-  screen: 'Search',
-  params: {
-    preselectedDeparture: {
-      code: 'BOM',
-      name: 'Mumbai'
-    }
-  }
-});
-```
-
-## 🎯 Key Features in Detail
-
-### Location-Based Discovery
-- **Smart Permissions**: Automatic permission handling with user-friendly messages
-- **Accurate GPS**: High-accuracy location detection with fallbacks
-- **Privacy First**: Location only used for airport discovery, not stored
-
-### Beautiful UI/UX
-- **Progressive Disclosure**: Step-by-step location → airports → selection flow
-- **Loading States**: Professional shimmer effects and spinners
-- **Error Recovery**: Clear error messages with retry actions
-- **Visual Feedback**: Ripple effects and state changes
-
-### Cross-Platform Support
-- **React Native**: Native iOS and Android performance
-- **Expo Web**: Works in browsers with geolocation API
-- **Responsive Design**: Adapts to different screen sizes
-
-## 📡 API Integration
-
-### Sky Scrapper API
-```typescript
-// Nearby airports endpoint
-GET /api/v1/flights/getNearByAirports
-Parameters: lat, lng, locale
-
-// Example response
-{
-  "status": true,
-  "data": {
-    "current": { /* Current airport */ },
-    "nearby": [ /* Nearby airports */ ]
-  }
-}
-```
-
-### Automatic Localization
-```typescript
-// API calls automatically include user's selected language
-const response = await getNearbyAirports(coordinates, currentLocale?.id);
-```
-
-## 🏃‍♂️ Development Workflow
-
-### Running Tests
 ```bash
-npm test
+# Clone the repository
+git clone https://github.com/your-username/google-flights-app.git
+cd google-flights-app
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Add your EXPO_PUBLIC_RAPIDAPI_KEY=your_api_key_here
+
+# Start the development server
+npm start
 ```
 
-### Type Checking
+### Environment Setup
+Create a `.env` file with:
+```env
+EXPO_PUBLIC_RAPIDAPI_KEY=your_sky_scrapper_api_key
+```
+
+## 🛠 Technical Architecture
+
+### **API Integration**
+```typescript
+// Real Sky Scrapper API endpoints
+/api/v1/flights/searchAirport    // Airport/city/country search
+/api/v1/flights/getNearByAirports // GPS-based airport discovery
+/api/v1/flights/searchFlights    // Complete flight search
+```
+
+### **Core Components**
+
+#### **Airport Search Input**
+```typescript
+<AirportSearchInput
+  label="From"
+  value={origin}
+  onValueChange={setOrigin}
+  onAirportSelect={(airport) => {
+    // Auto-fills with skyId and entityId for API calls
+    setSelectedAirport(airport);
+  }}
+  placeholder="Search airports, cities..."
+/>
+```
+
+#### **Flight Results Display**
+```typescript
+<FlightCard
+  itinerary={flightData}
+  onPress={() => navigateToDetails(flight.id)}
+/>
+```
+
+### **Navigation Structure**
+```
+MainTabNavigator
+├── Search (FlightSearchScreen)
+├── Results (FlightResultsScreen)  
+└── Profile (ProfileScreen)
+
+RootStackNavigator
+├── Main (TabNavigator)
+├── NearbyAirports (Modal)
+└── LanguageSelector (Modal)
+```
+
+### **State Management**
+- **React Context** for locale/language preferences
+- **Custom hooks** for geolocation, airport search, and API calls
+- **TypeScript interfaces** for complete type safety
+- **Formik + Yup** for form validation
+
+## 📱 User Experience Flow
+
+### **1. Airport Selection**
+```
+User opens app → Search screen
+├── Type "new" → See "New York (Any)", "New York JFK", etc.
+├── Select "New York JFK" → Auto-fills origin with complete data
+└── OR tap "Nearby" → GPS finds local airports
+```
+
+### **2. Flight Search**
+```
+Select airports → Choose dates → Set passengers → Search
+├── API call with: originSkyId, destinationSkyId, entityIds
+├── Real-time results loading
+└── Navigate to results screen
+```
+
+### **3. Results & Filtering**
+```
+Results screen → 10+ flights displayed
+├── Sort by: Best, Cheapest, Fastest, Departure time
+├── Filter by: All, Direct only, 1 stop, 2+ stops
+├── Airline logos, route visualization, price tags
+└── Tap flight → Navigate to details (TODO)
+```
+
+## 🌟 Key Features Showcase
+
+### **Intelligent Search**
+- **Debounced API calls**: 300ms delay prevents excessive requests
+- **Request cancellation**: Previous requests cancelled on new input
+- **Smart suggestions**: "New York" shows city + all airports
+- **Code extraction**: Automatically gets JFK, LGA, EWR for NYC
+
+### **Location Discovery**
+- **Cross-platform GPS**: Works on iOS, Android, and web
+- **Permission flows**: Graceful handling of denied permissions
+- **Fallback options**: Manual search when location unavailable
+- **Quick selection**: Horizontal scroll of nearby airports
+
+### **Flight Display**
+- **Airline branding**: Real logos from Sky Scrapper CDN
+- **Route visualization**: Green departure, red arrival points
+- **Stop indicators**: Visual indicators for layovers
+- **Price formatting**: Currency-aware price display
+- **Tag system**: "Cheapest", "Fastest", "Best" badges
+
+### **Real API Integration**
+```typescript
+// Actual API call structure
+const searchParams = {
+  originSkyId: "LOND",        // London area
+  destinationSkyId: "NYCA",   // New York area  
+  originEntityId: "27544008", // Specific entity
+  destinationEntityId: "27537542",
+  date: "2024-07-01",
+  cabinClass: "economy",
+  adults: 1,
+  sortBy: "best",
+  currency: "USD",
+  market: "en-US"
+};
+```
+
+## 🏗 Project Structure
+
+```
+src/
+├── components/           # Reusable UI components
+│   ├── AirportSearchInput.tsx
+│   ├── FlightCard.tsx
+│   ├── NearbyAirports.tsx
+│   └── QuickAirportSelector.tsx
+├── hooks/               # Custom React hooks
+│   ├── useAirportSearch.ts
+│   ├── useGeolocation.ts
+│   └── useNearbyAirports.ts
+├── navigation/          # Navigation configuration
+├── screens/            # Screen components
+│   ├── main/
+│   └── auth/
+├── services/           # API services
+│   └── api.ts
+├── types/             # TypeScript definitions
+└── utils/             # Helper functions
+```
+
+## 🔧 Development Commands
+
 ```bash
+# Start development server
+npm start
+
+# Run on specific platforms
+npm run ios
+npm run android
+npm run web
+
+# Type checking
 npm run type-check
+
+# Build for production
+npm run build
 ```
 
-### Building for Production
-```bash
-npx expo build:android
-npx expo build:ios
-```
+## 🌍 API Integration Details
 
-## 📖 Documentation
+### **Sky Scrapper API Features Used**
+1. **Airport Search**: Real-time search with autocomplete
+2. **Nearby Airports**: GPS-based airport discovery
+3. **Flight Search**: Complete flight booking flow
+4. **Localization**: 40+ language support
+5. **Rich Data**: Airline logos, route details, pricing
 
-- **[Nearby Airports Feature](docs/NEARBY_AIRPORTS_FEATURE.md)** - Complete feature documentation
-- **[Component Library](src/components/README.md)** - UI components guide
-- **[API Documentation](src/services/README.md)** - API integration guide
+### **API Response Handling**
+- **Type-safe interfaces** for all API responses
+- **Error boundaries** with graceful fallbacks
+- **Loading states** for better UX
+- **Retry mechanisms** for failed requests
+
+## 🚦 Testing
+
+The app includes comprehensive error handling:
+- **Network errors**: Graceful fallbacks to cached data
+- **Permission denials**: Alternative search methods
+- **Invalid searches**: Clear error messages
+- **API failures**: Retry options and mock data
+
+## 🎯 Future Enhancements
+
+- [ ] **Flight booking flow** with payment integration
+- [ ] **User authentication** and saved searches
+- [ ] **Price alerts** and notifications
+- [ ] **Flight details** screen with full itinerary
+- [ ] **Offline support** with cached data
+- [ ] **Travel preferences** and frequent flyer integration
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Sky Scrapper API** for flight and airport data
-- **React Native Paper** for beautiful Material Design components
-- **Expo** for excellent development experience
-- **React Navigation** for seamless navigation
-
 ---
 
-## 🎉 Ready to Fly!
-
-Your Google Flights app now includes powerful location-based airport discovery, making flight booking easier and more intuitive than ever. The nearby airports feature seamlessly integrates into your booking flow, providing users with a smart, location-aware flight search experience.
-
-**Happy coding and safe travels!** ✈️🌍 
+**Built with ❤️ using React Native, Expo, and the Sky Scrapper API** 

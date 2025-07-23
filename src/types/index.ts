@@ -63,34 +63,6 @@ export interface BaggageInfo {
 	checked: string;
 }
 
-// Search Types
-export interface FlightSearchParams {
-	origin: string;
-	destination: string;
-	departDate: string;
-	returnDate?: string;
-	adults: number;
-	children?: number;
-	infants?: number;
-	cabinClass?: 'economy' | 'premium' | 'business' | 'first';
-	tripType: 'oneWay' | 'roundTrip';
-}
-
-export interface FlightSearchResponse {
-	flights: Flight[];
-	searchId: string;
-	totalResults: number;
-	currency: string;
-}
-
-// Airport Types
-export interface Airport {
-	code: string;
-	name: string;
-	city: string;
-	country: string;
-}
-
 // Locale/Language Types
 export interface Locale {
 	id: string;
@@ -177,23 +149,205 @@ export interface SearchAirportResponse {
 // Generic Airport Type (for components that handle both nearby and search results)
 export type AirportSearchItem = NearbyAirport | CurrentAirport | SearchAirportResult;
 
+// Flight Search Types (Updated for Real API)
+export interface FlightSearchParams {
+	originSkyId: string;
+	destinationSkyId: string;
+	originEntityId: string;
+	destinationEntityId: string;
+	date: string; // YYYY-MM-DD format
+	returnDate?: string; // For round trips
+	cabinClass?: 'economy' | 'premium_economy' | 'business' | 'first';
+	adults: number;
+	children?: number;
+	infants?: number;
+	sortBy?: 'best' | 'cheapest' | 'fastest';
+	currency?: string;
+	market?: string;
+	countryCode?: string;
+}
+
+export interface FlightSearchFormValues {
+	origin: string;
+	destination: string;
+	departDate: string;
+	returnDate: string;
+	adults: number;
+	tripType: 'roundTrip' | 'oneWay';
+}
+
+// Flight Result Types
+export interface FlightPrice {
+	raw: number;
+	formatted: string;
+}
+
+export interface FlightPlace {
+	id: string;
+	name: string;
+	displayCode: string;
+	city: string;
+	isHighlighted: boolean;
+}
+
+export interface FlightCarrier {
+	id: number;
+	logoUrl: string;
+	name: string;
+	alternateId?: string;
+	allianceId?: number;
+}
+
+export interface FlightCarriers {
+	marketing: FlightCarrier[];
+	operationType: string;
+}
+
+export interface FlightPlaceDetailed {
+	flightPlaceId: string;
+	displayCode: string;
+	name: string;
+	type: 'Airport' | 'City';
+	parent?: {
+		flightPlaceId: string;
+		displayCode: string;
+		name: string;
+		type: 'City' | 'Country';
+	};
+}
+
+export interface FlightSegment {
+	id: string;
+	origin: FlightPlaceDetailed;
+	destination: FlightPlaceDetailed;
+	departure: string; // ISO string
+	arrival: string; // ISO string
+	durationInMinutes: number;
+	flightNumber: string;
+	marketingCarrier: FlightCarrier;
+	operatingCarrier: FlightCarrier;
+}
+
+export interface FlightLeg {
+	id: string;
+	origin: FlightPlace;
+	destination: FlightPlace;
+	durationInMinutes: number;
+	stopCount: number;
+	isSmallestStops: boolean;
+	departure: string; // ISO string
+	arrival: string; // ISO string
+	timeDeltaInDays: number;
+	carriers: FlightCarriers;
+	segments: FlightSegment[];
+}
+
+export interface FarePolicy {
+	isChangeAllowed: boolean;
+	isPartiallyChangeable: boolean;
+	isCancellationAllowed: boolean;
+	isPartiallyRefundable: boolean;
+}
+
+export interface FlightItinerary {
+	id: string;
+	price: FlightPrice;
+	legs: FlightLeg[];
+	isSelfTransfer: boolean;
+	isProtectedSelfTransfer: boolean;
+	farePolicy: FarePolicy;
+	eco?: {
+		ecoContenderDelta: number;
+	};
+	tags: string[];
+	isMashUp: boolean;
+	hasFlexibleOptions: boolean;
+	score: number;
+}
+
+export interface FlightSearchContext {
+	status: 'incomplete' | 'complete';
+	totalResults: number;
+}
+
+export interface FilterAirport {
+	id: string;
+	name: string;
+}
+
+export interface FilterCity {
+	city: string;
+	airports: FilterAirport[];
+}
+
+export interface StopPrice {
+	isPresent: boolean;
+	formattedPrice?: string;
+}
+
+export interface FilterStats {
+	duration: {
+		min: number;
+		max: number;
+	};
+	airports: FilterCity[];
+	carriers: FlightCarrier[];
+	stopPrices: {
+		direct: StopPrice;
+		one: StopPrice;
+		twoOrMore: StopPrice;
+	};
+}
+
+export interface FlightSearchData {
+	context: FlightSearchContext;
+	itineraries: FlightItinerary[];
+	messages: any[];
+	filterStats: FilterStats;
+}
+
+export interface FlightSearchResponse {
+	status: boolean;
+	timestamp: number;
+	sessionId: string;
+	data: FlightSearchData;
+}
+
+// Legacy Flight Types (for backward compatibility)
+export interface Flight {
+	id: string;
+	airline: string;
+	flightNumber: string;
+	departureAirport: string;
+	arrivalAirport: string;
+	departureTime: string;
+	arrivalTime: string;
+	duration: string;
+	price: number;
+	stops: number;
+	currency: string;
+	available: boolean;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
 	success: boolean;
 	data: T;
-	message?: string;
 	error?: string;
 }
 
 // Navigation Types
 export type RootStackParamList = {
-	Auth: undefined;
 	Main: undefined;
 	NearbyAirports: {
 		selectionMode?: 'departure' | 'arrival';
-		onAirportSelect?: (airport: NearbyAirport | CurrentAirport) => void;
+		onAirportSelect?: (airport: any) => void;
 	};
 	LanguageSelector: undefined;
+	FlightResults: {
+		searchParams: FlightSearchParams;
+		response: FlightSearchResponse;
+	};
 };
 
 export type AuthStackParamList = {
@@ -211,10 +365,11 @@ export type MainTabParamList = {
 			code: string;
 			name: string;
 		};
-	} | undefined;
+	};
 	Results: {
 		searchParams: FlightSearchParams;
-		flights: Flight[];
+		flights?: Flight[]; // Legacy support
+		response?: FlightSearchResponse; // New format
 	};
 	Profile: undefined;
 };
@@ -230,13 +385,4 @@ export interface SignUpFormValues {
 	email: string;
 	password: string;
 	confirmPassword: string;
-}
-
-export interface FlightSearchFormValues {
-	origin: string;
-	destination: string;
-	departDate: string;
-	returnDate: string;
-	adults: number;
-	tripType: 'oneWay' | 'roundTrip';
 } 
