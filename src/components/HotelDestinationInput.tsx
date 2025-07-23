@@ -142,14 +142,14 @@ export const HotelDestinationInput: React.FC<HotelDestinationInputProps> = ({
 			</View>
 
 			<View style={styles.destinationMeta}>
-				<Chip
+				{/* <Chip
 					mode="outlined"
 					compact
 					style={styles.typeChip}
 					textStyle={styles.typeChipText}
 				>
 					{getDestinationTypeLabel(item.entityType, item.class)}
-				</Chip>
+				</Chip> */}
 			</View>
 		</Pressable>
 	);

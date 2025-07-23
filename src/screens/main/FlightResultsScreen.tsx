@@ -157,8 +157,8 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 
 				{response && (
 					<CustomText variant="bodyMedium" color="secondary" style={styles.resultsCount}>
-						{response.data.context.totalResults} flights found
-						{response.data.context.status === 'incomplete' && ' (loading more...)'}
+						{response.data?.context?.totalResults} flights found
+						{response.data?.context?.status === 'incomplete' && ' (loading more...)'}
 					</CustomText>
 				)}
 			</Card.Content>
@@ -234,7 +234,7 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 			);
 		}
 
-		if (!response || !response.data.itineraries.length) {
+		if (!response || !response.data?.itineraries?.length) {
 			return (
 				<View style={styles.centerContainer}>
 					<EmptyState
@@ -298,7 +298,7 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 				</View>
 
 				{/* Loading more indicator */}
-				{response.data.context.status === 'incomplete' && (
+				{response?.data?.context?.status === 'incomplete' && (
 					<View style={styles.loadingMore}>
 						<LoadingSpinner size="small" message="Loading more results..." />
 					</View>
