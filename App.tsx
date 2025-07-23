@@ -2,6 +2,7 @@ import React from 'react';
 import {StatusBar} from 'expo-status-bar';
 import {Provider as PaperProvider, DefaultTheme} from 'react-native-paper';
 import {AuthProvider} from './src/context/AuthContext';
+import {LocaleProvider} from './src/context/LocaleContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Import Reactotron configuration (must be imported before everything else in development)
@@ -26,10 +27,12 @@ const theme = {
 export default function App() {
 	return (
 		<PaperProvider theme={theme}>
-			<AuthProvider>
-				<StatusBar style="auto" />
-				<AppNavigator />
-			</AuthProvider>
+			<LocaleProvider>
+				<AuthProvider>
+					<StatusBar style="auto" />
+					<AppNavigator />
+				</AuthProvider>
+			</LocaleProvider>
 		</PaperProvider>
 	);
 } 

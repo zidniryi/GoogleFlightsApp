@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
-import {FlightSearchParams, FlightSearchResponse, ApiResponse} from '../types';
+import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse} from '../types';
 import {logApiRequest, logApiResponse, logError} from '../utils/ReactotronLogger';
 
 // API Configuration
@@ -85,9 +85,10 @@ export const apiPost = async <T>(
 	}
 };
 
-// Flight Search API
+// Flight Search API with optional locale support
 export const searchFlights = async (
-	searchParams: FlightSearchParams
+	searchParams: FlightSearchParams,
+	locale?: string
 ): Promise<ApiResponse<FlightSearchResponse>> => {
 	const params = {
 		from: searchParams.origin,
@@ -99,6 +100,7 @@ export const searchFlights = async (
 		infants: searchParams.infants || 0,
 		cabinClass: searchParams.cabinClass || 'economy',
 		currency: 'USD',
+		...(locale && {locale}), // Add locale if provided
 	};
 
 	// Use different endpoint based on trip type
@@ -116,11 +118,21 @@ export const getFlightDetails = async (
 	return apiGet(`/api/v1/flights/details/${flightId}`);
 };
 
-// Get Airport Suggestions
+// Get Airport Suggestions with optional locale support
 export const getAirportSuggestions = async (
-	query: string
+	query: string,
+	locale?: string
 ): Promise<ApiResponse<any>> => {
-	return apiGet('/api/v1/flights/search-airports', {query});
+	const params = {
+		query,
+		...(locale && {locale}), // Add locale if provided
+	};
+	return apiGet('/api/v1/flights/search-airports', params);
+};
+
+// Get Available Locales/Languages
+export const getLocales = async (): Promise<ApiResponse<LocaleResponse>> => {
+	return apiGet<LocaleResponse>('/api/v1/getLocale');
 };
 
 // Mock flight data for development/testing

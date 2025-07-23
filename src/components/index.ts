@@ -36,5 +36,14 @@ export {
 // Layout Components
 export {SafeAreaContainer} from './SafeAreaContainer';
 
+// Language Components
+export {
+	LanguageSelector,
+	LanguageButton,
+	LanguageCard,
+	LanguageInline
+} from './LanguageSelector';
+export {LocaleApiDemo} from './LocaleApiDemo';
+
 // Example/Demo Components
 export {ComponentShowcase} from './ComponentShowcase'; 

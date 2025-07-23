@@ -91,6 +91,19 @@ export interface Airport {
 	country: string;
 }
 
+// Locale/Language Types
+export interface Locale {
+	id: string;
+	text: string;
+}
+
+export interface LocaleResponse {
+	status: boolean;
+	message: string;
+	timestamp: number;
+	data: Locale[];
+}
+
 // API Response Types
 export interface ApiResponse<T> {
 	success: boolean;

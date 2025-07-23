@@ -15,8 +15,10 @@ import {
 	Divider,
 } from 'react-native-paper';
 import {useAuth} from '../../context/AuthContext';
+import {useLocale} from '../../context/LocaleContext';
+import {LanguageCard} from '../../components';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
-import {MainTabParamList} from '../../types';
+import {MainTabParamList, Locale} from '../../types';
 
 type ProfileScreenNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Profile'>;
 
@@ -26,6 +28,7 @@ interface Props {
 
 const ProfileScreen: React.FC<Props> = ({navigation}) => {
 	const {user, logout, loading} = useAuth();
+	const {currentLocale} = useLocale();
 
 	const handleLogout = () => {
 		Alert.alert(
@@ -68,6 +71,14 @@ const ProfileScreen: React.FC<Props> = ({navigation}) => {
 			.substring(0, 2);
 	};
 
+	const handleLanguageChange = (locale: Locale) => {
+		Alert.alert(
+			'Language Changed',
+			`Language changed to ${locale.text}. Some features may require an app restart.`,
+			[{text: 'OK'}]
+		);
+	};
+
 	return (
 		<ScrollView style={styles.container}>
 			{/* User Info Card */}
@@ -83,6 +94,21 @@ const ProfileScreen: React.FC<Props> = ({navigation}) => {
 							<Title style={styles.userName}>{user.name}</Title>
 							<Text style={styles.userEmail}>{user.email}</Text>
 						</View>
+					</View>
+				</Card.Content>
+			</Card>
+
+			{/* Language Settings */}
+			<Card style={styles.menuCard}>
+				<Card.Content>
+					<Title style={styles.menuTitle}>Settings</Title>
+
+					<View style={styles.languageSection}>
+						<Text style={styles.sectionLabel}>Language</Text>
+						<LanguageCard
+							showLabel={false}
+							onLanguageChange={handleLanguageChange}
+						/>
 					</View>
 				</Card.Content>
 			</Card>
@@ -267,6 +293,15 @@ const styles = StyleSheet.create({
 		color: '#999',
 		textAlign: 'center',
 		marginBottom: 4,
+	},
+	languageSection: {
+		marginBottom: 16,
+	},
+	sectionLabel: {
+		fontSize: 16,
+		fontWeight: '500',
+		marginBottom: 8,
+		color: '#333',
 	},
 });
 
