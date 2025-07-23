@@ -20,6 +20,7 @@ import {RouteProp} from '@react-navigation/native';
 import {format, addDays, isSameDay, isAfter, isBefore} from 'date-fns';
 import {Formik} from 'formik';
 import * as Yup from 'yup';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
 	CustomText,
@@ -46,8 +47,11 @@ const CarSearchSchema = Yup.object().shape({
 		then: (schema) => schema.nullable().required('Please select a dropoff location'),
 		otherwise: (schema) => schema.nullable(),
 	}),
-	pickupDate: Yup.date().nullable().required('Please select pickup date'),
-	dropoffDate: Yup.date().nullable().required('Please select dropoff date'),
+	pickupDate: Yup.date().required('Please select pickup date'),
+	dropoffDate: Yup.date().required('Please select dropoff date').min(
+		Yup.ref('pickupDate'),
+		'Dropoff date must be after pickup date'
+	),
 	pickupTime: Yup.string().required('Please select pickup time'),
 	dropoffTime: Yup.string().required('Please select dropoff time'),
 	driverAge: Yup.number().min(18, 'Driver must be at least 18 years old').max(99, 'Please enter a valid age').required('Please enter driver age'),
@@ -66,13 +70,15 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 
 	const [showPickupTimePicker, setShowPickupTimePicker] = useState(false);
 	const [showDropoffTimePicker, setShowDropoffTimePicker] = useState(false);
+	const [showPickupDatePicker, setShowPickupDatePicker] = useState(false);
+	const [showDropoffDatePicker, setShowDropoffDatePicker] = useState(false);
 
 	// Initial form values
 	const initialValues: CarSearchFormData = {
 		pickupLocation: preselectedPickupLocation || null,
 		dropoffLocation: preselectedDropoffLocation || null,
-		pickupDate: null,
-		dropoffDate: null,
+		pickupDate: new Date(),
+		dropoffDate: addDays(new Date(), 1),
 		pickupTime: '10:00',
 		dropoffTime: '10:00',
 		sameLocation: true,
@@ -139,7 +145,7 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 
 	const formatDateDisplay = (date: Date | null) => {
 		if (!date) return 'Select date';
-		return format(date, 'MMM dd, yyyy');
+		return format(date, 'EEE, MMM dd, yyyy');
 	};
 
 	const getMinDropoffDate = (pickupDate: Date | null) => {
@@ -288,7 +294,7 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 											</CustomText>
 											<Button
 												mode="outlined"
-												onPress={() => {/* TODO: Implement date picker */}}
+												onPress={() => setShowPickupDatePicker(true)}
 												style={styles.dateButton}
 												contentStyle={styles.dateButtonContent}
 												icon="calendar"
@@ -319,7 +325,7 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 											</CustomText>
 											<Button
 												mode="outlined"
-												onPress={() => {/* TODO: Implement date picker */}}
+												onPress={() => setShowDropoffDatePicker(true)}
 												style={styles.dateButton}
 												contentStyle={styles.dateButtonContent}
 												icon="calendar"
@@ -402,6 +408,41 @@ const CarSearchScreen: React.FC<Props> = ({navigation, route}) => {
 									)}
 								</Card.Content>
 							</Card>
+
+							{/* Date Pickers */}
+							{showPickupDatePicker && (
+								<DateTimePicker
+									value={values.pickupDate || new Date()}
+									mode="date"
+									display="default"
+									minimumDate={new Date()}
+									onChange={(event, selectedDate) => {
+										setShowPickupDatePicker(false);
+										if (selectedDate) {
+											setFieldValue('pickupDate', selectedDate);
+											// Auto-adjust dropoff date if it's before or same as pickup date
+											if (!values.dropoffDate || selectedDate >= values.dropoffDate) {
+												setFieldValue('dropoffDate', addDays(selectedDate, 1));
+											}
+										}
+									}}
+								/>
+							)}
+
+							{showDropoffDatePicker && (
+								<DateTimePicker
+									value={values.dropoffDate || addDays(new Date(), 1)}
+									mode="date"
+									display="default"
+									minimumDate={values.pickupDate || new Date()}
+									onChange={(event, selectedDate) => {
+										setShowDropoffDatePicker(false);
+										if (selectedDate) {
+											setFieldValue('dropoffDate', selectedDate);
+										}
+									}}
+								/>
+							)}
 
 							{/* Search Summary */}
 							{values.pickupLocation && (

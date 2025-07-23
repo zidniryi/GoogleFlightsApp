@@ -19,6 +19,7 @@ import {RouteProp} from '@react-navigation/native';
 import {format, addDays, isSameDay, isAfter, isBefore} from 'date-fns';
 import {Formik} from 'formik';
 import * as Yup from 'yup';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
 	CustomText,
@@ -107,7 +108,7 @@ const HotelSearchScreen: React.FC<Props> = ({navigation, route}) => {
 
 	const formatDateDisplay = (date: Date | null) => {
 		if (!date) return 'Select date';
-		return format(date, 'MMM dd, yyyy');
+		return format(date, 'EEE, MMM dd, yyyy');
 	};
 
 	const getMinCheckOutDate = (checkInDate: Date | null) => {
@@ -363,12 +364,43 @@ const HotelSearchScreen: React.FC<Props> = ({navigation, route}) => {
 								]}
 							/>
 						</View>
+
+						{/* Check-in Date Picker */}
+						{showCheckInPicker && (
+							<DateTimePicker
+								value={values.checkIn || new Date()}
+								mode="date"
+								display="default"
+								minimumDate={new Date()}
+								onChange={(event, selectedDate) => {
+									if (event.type === 'set' && selectedDate) {
+										handleDateSelect(selectedDate, 'checkIn', setFieldValue, values);
+									} else {
+										setShowCheckInPicker(false);
+									}
+								}}
+							/>
+						)}
+
+						{/* Check-out Date Picker */}
+						{showCheckOutPicker && (
+							<DateTimePicker
+								value={values.checkOut || getMinCheckOutDate(values.checkIn)}
+								mode="date"
+								display="default"
+								minimumDate={getMinCheckOutDate(values.checkIn)}
+								onChange={(event, selectedDate) => {
+									if (event.type === 'set' && selectedDate) {
+										handleDateSelect(selectedDate, 'checkOut', setFieldValue, values);
+									} else {
+										setShowCheckOutPicker(false);
+									}
+								}}
+							/>
+						)}
 					</>
 				)}
 			</Formik>
-
-			{/* Date Pickers - would implement with a date picker library like react-native-date-picker */}
-			{/* For now, showing the structure - would need actual date picker implementation */}
 		</SafeAreaContainer>
 	);
 };
