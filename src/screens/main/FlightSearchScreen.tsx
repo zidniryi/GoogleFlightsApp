@@ -185,18 +185,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 		return unsubscribe;
 	}, [navigation, route.params]);
 
-	const renderSelectedAirportInfo = (airport: SelectedAirport | null, label: string) => {
-		if (!airport) return null;
 
-		return (
-			<View style={styles.selectedAirportInfo}>
-				<Text style={styles.selectedAirportLabel}>{label}:</Text>
-				<Text style={styles.selectedAirportText}>
-					{airport.name} ({airport.displayCode})
-				</Text>
-			</View>
-		);
-	};
 
 	return (
 		<ScrollView style={styles.container}>
@@ -289,7 +278,9 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 						<Card style={styles.card}>
 							<Card.Content>
 								<Text style={styles.sectionTitle}>Airports</Text>
+
 								<View style={styles.airportContainer}>
+									{/* From Input */}
 									<View style={styles.airportInputContainer}>
 										<AirportSearchInput
 											label="From"
@@ -297,28 +288,56 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 											onValueChange={(value) => {
 												setFieldValue('origin', value);
 												// Clear selected origin if user is typing manually
-												if (value !== selectedOrigin?.displayCode) {
+												if (!value.includes('(') || !value.includes(')')) {
 													setSelectedOrigin(null);
 												}
 											}}
 											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'origin', setFieldValue)}
 											placeholder="Search departure airport..."
-											error={touched.origin && !!errors.origin}
+											error={!selectedOrigin && touched.origin && !!errors.origin}
+											selectedAirport={selectedOrigin ? {
+												skyId: selectedOrigin.skyId,
+												entityId: selectedOrigin.entityId,
+												presentation: {
+													title: selectedOrigin.name,
+													suggestionTitle: selectedOrigin.displayCode,
+													subtitle: ''
+												},
+												navigation: {
+													entityType: 'AIRPORT' as const,
+													entityId: selectedOrigin.entityId,
+													localizedName: selectedOrigin.name,
+													relevantFlightParams: {
+														skyId: selectedOrigin.skyId,
+														entityId: selectedOrigin.entityId,
+														flightPlaceType: 'AIRPORT',
+														localizedName: selectedOrigin.name
+													},
+													relevantHotelParams: {
+														entityId: selectedOrigin.entityId,
+														entityType: 'AIRPORT',
+														localizedName: selectedOrigin.name
+													}
+												}
+											} : null}
 											style={styles.airportInput}
 										/>
-										<HelperText type="error" visible={touched.origin && !!errors.origin}>
+										<HelperText type="error" visible={!selectedOrigin && touched.origin && !!errors.origin}>
 											{errors.origin}
 										</HelperText>
-										{renderSelectedAirportInfo(selectedOrigin, 'Selected Departure')}
 									</View>
 
-									<FAB
-										icon="swap-horizontal"
-										size="small"
-										style={styles.swapButton}
-										onPress={() => swapAirports(values, setFieldValue)}
-									/>
+									{/* Swap Button - Between Inputs */}
+									<View style={styles.swapButtonContainer}>
+										<FAB
+											icon="swap-vertical"
+											size="small"
+											style={styles.swapButton}
+											onPress={() => swapAirports(values, setFieldValue)}
+										/>
+									</View>
 
+									{/* To Input */}
 									<View style={styles.airportInputContainer}>
 										<AirportSearchInput
 											label="To"
@@ -326,19 +345,43 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 											onValueChange={(value) => {
 												setFieldValue('destination', value);
 												// Clear selected destination if user is typing manually
-												if (value !== selectedDestination?.displayCode) {
+												if (!value.includes('(') || !value.includes(')')) {
 													setSelectedDestination(null);
 												}
 											}}
 											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'destination', setFieldValue)}
 											placeholder="Search arrival airport..."
-											error={touched.destination && !!errors.destination}
+											error={!selectedDestination && touched.destination && !!errors.destination}
+											selectedAirport={selectedDestination ? {
+												skyId: selectedDestination.skyId,
+												entityId: selectedDestination.entityId,
+												presentation: {
+													title: selectedDestination.name,
+													suggestionTitle: selectedDestination.displayCode,
+													subtitle: ''
+												},
+												navigation: {
+													entityType: 'AIRPORT' as const,
+													entityId: selectedDestination.entityId,
+													localizedName: selectedDestination.name,
+													relevantFlightParams: {
+														skyId: selectedDestination.skyId,
+														entityId: selectedDestination.entityId,
+														flightPlaceType: 'AIRPORT',
+														localizedName: selectedDestination.name
+													},
+													relevantHotelParams: {
+														entityId: selectedDestination.entityId,
+														entityType: 'AIRPORT',
+														localizedName: selectedDestination.name
+													}
+												}
+											} : null}
 											style={styles.airportInput}
 										/>
-										<HelperText type="error" visible={touched.destination && !!errors.destination}>
+										<HelperText type="error" visible={!selectedDestination && touched.destination && !!errors.destination}>
 											{errors.destination}
 										</HelperText>
-										{renderSelectedAirportInfo(selectedDestination, 'Selected Arrival')}
 									</View>
 								</View>
 
@@ -348,27 +391,27 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 									<View style={styles.nearbyButtons}>
 										<Button
 											mode="outlined"
-											compact
-											icon="map-marker"
 											onPress={() =>
 												navigation.navigate('NearbyAirports', {
-													selectionMode: 'departure'
+													selectionMode: 'departure',
+													onAirportSelect: (airport) => handleAirportSelect(airport, 'origin', setFieldValue),
 												})
 											}
 											style={styles.nearbyButton}
+											icon="map-marker"
 										>
 											Nearby Departure
 										</Button>
 										<Button
 											mode="outlined"
-											compact
-											icon="map-marker"
 											onPress={() =>
 												navigation.navigate('NearbyAirports', {
-													selectionMode: 'arrival'
+													selectionMode: 'arrival',
+													onAirportSelect: (airport) => handleAirportSelect(airport, 'destination', setFieldValue),
 												})
 											}
 											style={styles.nearbyButton}
+											icon="map-marker"
 										>
 											Nearby Arrival
 										</Button>
@@ -486,17 +529,20 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 							mode="contained"
 							onPress={handleSubmit as any}
 							loading={loading}
-							disabled={!isValid || loading || !selectedOrigin || !selectedDestination}
-							style={styles.searchButton}
+							disabled={loading || !selectedOrigin || !selectedDestination}
+							style={[
+								styles.searchButton,
+								(!selectedOrigin || !selectedDestination) && styles.searchButtonDisabled
+							]}
 							contentStyle={styles.searchButtonContent}
 							icon="airplane"
 						>
-							Search Flights
+							{loading ? 'Searching...' : 'Search Flights'}
 						</Button>
 
 						{(!selectedOrigin || !selectedDestination) && (
 							<HelperText type="info" visible style={styles.searchHelp}>
-								Please select airports using the search above to enable flight search
+								✈️ Please select both departure and arrival airports to search flights
 							</HelperText>
 						)}
 					</View>
@@ -551,37 +597,22 @@ const styles = StyleSheet.create({
 		marginRight: 20,
 	},
 	airportContainer: {
-		flexDirection: 'row',
-		alignItems: 'flex-start',
+		marginBottom: 8,
 	},
 	airportInputContainer: {
-		flex: 1,
-		zIndex: 1000,
+		marginBottom: 12,
 	},
 	airportInput: {
-		marginHorizontal: 8,
+		marginBottom: 4,
 	},
-	selectedAirportInfo: {
-		marginTop: 8,
-		marginHorizontal: 8,
-		padding: 8,
-		backgroundColor: '#e3f2fd',
-		borderRadius: 4,
-	},
-	selectedAirportLabel: {
-		fontSize: 12,
-		color: '#1976d2',
-		fontWeight: 'bold',
-	},
-	selectedAirportText: {
-		fontSize: 14,
-		color: '#1976d2',
-		marginTop: 2,
+	swapButtonContainer: {
+		alignItems: 'center',
+		marginVertical: 12,
+		zIndex: 10,
 	},
 	swapButton: {
-		alignSelf: 'center',
-		marginHorizontal: 8,
-		marginTop: 8,
+		backgroundColor: '#e3f2fd',
+		elevation: 4,
 	},
 	alternativeOptions: {
 		marginTop: 16,
@@ -634,6 +665,9 @@ const styles = StyleSheet.create({
 	searchButton: {
 		marginTop: 24,
 		marginBottom: 8,
+	},
+	searchButtonDisabled: {
+		backgroundColor: '#cccccc',
 	},
 	searchButtonContent: {
 		paddingVertical: 12,

@@ -1,6 +1,6 @@
-import React, {useState} from 'react';
-import {StyleSheet, View, ScrollView, Pressable, Modal} from 'react-native';
-import {TextInput, IconButton, Divider} from 'react-native-paper';
+import React, {useState, useRef} from 'react';
+import {StyleSheet, View, ScrollView, Pressable, Platform, Modal} from 'react-native';
+import {TextInput, IconButton, Divider, Card, Chip, Portal} from 'react-native-paper';
 import {
 	CustomText,
 	LoadingSpinner,
@@ -18,6 +18,7 @@ interface AirportSearchInputProps {
 	error?: boolean;
 	disabled?: boolean;
 	style?: any;
+	selectedAirport?: SearchAirportResult | null;
 }
 
 export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
@@ -29,8 +30,12 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 	error = false,
 	disabled = false,
 	style,
+	selectedAirport = null,
 }) => {
 	const [showDropdown, setShowDropdown] = useState(false);
+	const [isFocused, setIsFocused] = useState(false);
+	const inputRef = useRef<any>(null);
+
 	const {
 		results,
 		loading,
@@ -51,20 +56,31 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 	};
 
 	const handleAirportSelect = (airport: SearchAirportResult) => {
-		onValueChange(airport.presentation.suggestionTitle);
+		// Format the display value like: "Balikpapan - Sepinggan International Airport (BPN)"
+		const displayValue = `${airport.presentation.title} (${airport.skyId})`;
+		onValueChange(displayValue);
 		onAirportSelect(airport);
 		setShowDropdown(false);
+		inputRef.current?.blur();
 	};
 
 	const handleFocus = () => {
+		setIsFocused(true);
 		if (value.length >= 2 && results.length > 0) {
 			setShowDropdown(true);
 		}
 	};
 
 	const handleBlur = () => {
+		setIsFocused(false);
 		// Delay hiding dropdown to allow for item selection
-		setTimeout(() => setShowDropdown(false), 150);
+		setTimeout(() => setShowDropdown(false), 200);
+	};
+
+	const clearInput = () => {
+		onValueChange('');
+		clearResults();
+		setShowDropdown(false);
 	};
 
 	const getEntityIcon = (entityType: string) => {
@@ -81,13 +97,16 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 	};
 
 	const renderSearchResult = (item: SearchAirportResult) => {
-		const icon = getEntityIcon(item.navigation.entityType);
 		const isAirport = item.navigation.entityType === 'AIRPORT';
+		const icon = getEntityIcon(item.navigation.entityType);
 
 		return (
 			<Pressable
 				key={`${item.entityId}-${item.skyId}`}
-				style={styles.resultItem}
+				style={({pressed}) => [
+					styles.resultItem,
+					pressed && styles.resultItemPressed
+				]}
 				onPress={() => handleAirportSelect(item)}
 				android_ripple={{color: '#e3f2fd'}}
 			>
@@ -96,33 +115,34 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 				</View>
 
 				<View style={styles.resultContent}>
-					<View style={styles.resultHeader}>
-						<CustomText
-							variant="bodyMedium"
-							weight="medium"
-							numberOfLines={1}
-						>
-							{item.presentation.title}
-						</CustomText>
-						{isAirport && (
-							<View style={styles.codeChip}>
-								<CustomText variant="labelSmall" style={styles.codeText}>
-									{item.skyId}
-								</CustomText>
-							</View>
-						)}
-					</View>
+					<CustomText
+						variant="bodyLarge"
+						weight="medium"
+						numberOfLines={1}
+						style={styles.resultTitle}
+					>
+						{item.presentation.title}
+					</CustomText>
 
 					{item.presentation.subtitle && (
-						<CustomText variant="bodySmall" color="secondary" numberOfLines={1}>
+						<CustomText
+							variant="bodyMedium"
+							color="secondary"
+							numberOfLines={1}
+							style={styles.resultSubtitle}
+						>
 							{item.presentation.subtitle}
 						</CustomText>
 					)}
-
-					<CustomText variant="bodySmall" color="secondary" style={styles.entityType}>
-						{item.navigation.entityType.toLowerCase()}
-					</CustomText>
 				</View>
+
+				{isAirport && (
+					<View style={styles.resultCode}>
+						<CustomText variant="bodyMedium" weight="bold" style={styles.codeText}>
+							{item.skyId}
+						</CustomText>
+					</View>
+				)}
 			</Pressable>
 		);
 	};
@@ -131,7 +151,10 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 		if (loading) {
 			return (
 				<View style={styles.loadingContainer}>
-					<LoadingSpinner size="small" message="Searching..." />
+					<LoadingSpinner size="small" />
+					<CustomText variant="bodyMedium" color="secondary" style={styles.loadingText}>
+						Searching airports...
+					</CustomText>
 				</View>
 			);
 		}
@@ -156,47 +179,20 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 			);
 		}
 
-		// Group results by type
+		// Prioritize airports
 		const airports = results.filter(item => item.navigation.entityType === 'AIRPORT');
 		const cities = results.filter(item => item.navigation.entityType === 'CITY');
-		const countries = results.filter(item => item.navigation.entityType === 'COUNTRY');
+		const others = results.filter(item => item.navigation.entityType !== 'AIRPORT' && item.navigation.entityType !== 'CITY');
+
+		const sortedResults = [...airports.slice(0, 8), ...cities.slice(0, 4), ...others.slice(0, 2)];
 
 		return (
-			<ScrollView style={styles.resultsScroll} showsVerticalScrollIndicator={false}>
-				{airports.length > 0 && (
-					<>
-						<View style={styles.sectionHeader}>
-							<CustomText variant="labelMedium" weight="bold" color="primary">
-								✈️ Airports ({airports.length})
-							</CustomText>
-						</View>
-						{airports.map(renderSearchResult)}
-					</>
-				)}
-
-				{cities.length > 0 && (
-					<>
-						{airports.length > 0 && <Divider style={styles.sectionDivider} />}
-						<View style={styles.sectionHeader}>
-							<CustomText variant="labelMedium" weight="bold" color="primary">
-								🏙️ Cities ({cities.length})
-							</CustomText>
-						</View>
-						{cities.map(renderSearchResult)}
-					</>
-				)}
-
-				{countries.length > 0 && (
-					<>
-						{(airports.length > 0 || cities.length > 0) && <Divider style={styles.sectionDivider} />}
-						<View style={styles.sectionHeader}>
-							<CustomText variant="labelMedium" weight="bold" color="primary">
-								🌍 Countries ({countries.length})
-							</CustomText>
-						</View>
-						{countries.map(renderSearchResult)}
-					</>
-				)}
+			<ScrollView
+				style={styles.resultsScroll}
+				showsVerticalScrollIndicator={false}
+				keyboardShouldPersistTaps="handled"
+			>
+				{sortedResults.map(renderSearchResult)}
 			</ScrollView>
 		);
 	};
@@ -204,6 +200,7 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 	return (
 		<View style={[styles.container, style]}>
 			<TextInput
+				ref={inputRef}
 				label={label}
 				value={value}
 				onChangeText={handleTextChange}
@@ -213,118 +210,136 @@ export const AirportSearchInput: React.FC<AirportSearchInputProps> = ({
 				placeholder={placeholder}
 				error={error}
 				disabled={disabled}
+				style={styles.textInput}
+				left={
+					<TextInput.Icon
+						icon={selectedAirport ? "airplane" : "magnify"}
+					/>
+				}
 				right={
 					loading ? (
 						<TextInput.Icon icon="loading" />
 					) : value.length > 0 ? (
 						<TextInput.Icon
 							icon="close"
-							onPress={() => {
-								onValueChange('');
-								clearResults();
-								setShowDropdown(false);
-							}}
+							onPress={clearInput}
 						/>
-					) : (
-						<TextInput.Icon icon="magnify" />
-					)
+					) : undefined
 				}
 			/>
 
-			{showDropdown && results.length > 0 && (
-				<View style={styles.dropdown}>
-					<View style={styles.dropdownContent}>
-						{renderDropdownContent()}
-					</View>
-				</View>
-			)}
+			{/* Use Portal to render dropdown above everything else */}
+			<Portal>
+				<Modal
+					visible={showDropdown && results.length > 0}
+					transparent
+					animationType="fade"
+					onRequestClose={() => setShowDropdown(false)}
+				>
+					<Pressable
+						style={styles.modalOverlay}
+						onPress={() => setShowDropdown(false)}
+					>
+						<View style={styles.modalContent}>
+							<Card style={styles.dropdownCard} mode="elevated">
+								<Card.Content style={styles.dropdownContent}>
+									{renderDropdownContent()}
+								</Card.Content>
+							</Card>
+						</View>
+					</Pressable>
+				</Modal>
+			</Portal>
 		</View>
 	);
 };
 
 const styles = StyleSheet.create({
 	container: {
-		position: 'relative',
-		zIndex: 1000,
+		marginBottom: 16,
 	},
-	dropdown: {
-		position: 'absolute',
-		top: '100%',
-		left: 0,
-		right: 0,
-		zIndex: 1001,
-		marginTop: 4,
+	textInput: {
+		backgroundColor: '#ffffff',
+	},
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.3)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20,
+	},
+	modalContent: {
+		width: '100%',
+		maxWidth: 400,
+		maxHeight: '70%',
+	},
+	dropdownCard: {
+		elevation: 12,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: {width: 0, height: 6},
+				shadowOpacity: 0.4,
+				shadowRadius: 12,
+			},
+		}),
 	},
 	dropdownContent: {
-		backgroundColor: '#ffffff',
-		borderRadius: 8,
-		maxHeight: 300,
-		borderWidth: 1,
-		borderColor: '#e9ecef',
-		elevation: 8,
-		shadowColor: '#000',
-		shadowOffset: {width: 0, height: 2},
-		shadowOpacity: 0.15,
-		shadowRadius: 8,
+		padding: 0,
+		maxHeight: 400,
 	},
 	resultsScroll: {
-		maxHeight: 280,
-	},
-	sectionHeader: {
-		padding: 12,
-		paddingBottom: 8,
-		backgroundColor: '#f8f9fa',
-	},
-	sectionDivider: {
-		marginVertical: 4,
+		maxHeight: 380,
 	},
 	resultItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: 12,
+		padding: 16,
 		borderBottomWidth: 1,
 		borderBottomColor: '#f1f3f4',
+		minHeight: 70,
+	},
+	resultItemPressed: {
+		backgroundColor: '#f5f5f5',
 	},
 	resultIcon: {
-		marginRight: 12,
-		minWidth: 32,
+		width: 40,
 		alignItems: 'center',
+		marginRight: 12,
 	},
 	resultContent: {
 		flex: 1,
+		marginRight: 8,
 	},
-	resultHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+	resultTitle: {
 		marginBottom: 2,
 	},
-	codeChip: {
+	resultSubtitle: {
+		fontSize: 13,
+	},
+	resultCode: {
 		backgroundColor: '#e3f2fd',
-		paddingHorizontal: 8,
-		paddingVertical: 2,
-		borderRadius: 4,
-		marginLeft: 8,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 8,
 	},
 	codeText: {
-		fontSize: 11,
 		color: '#1976d2',
-		fontWeight: 'bold',
-	},
-	entityType: {
-		textTransform: 'capitalize',
-		fontSize: 11,
-		marginTop: 2,
+		fontSize: 13,
 	},
 	loadingContainer: {
-		padding: 20,
+		padding: 32,
 		alignItems: 'center',
 	},
+	loadingText: {
+		marginTop: 12,
+	},
 	errorContainer: {
-		padding: 20,
+		padding: 32,
 	},
 	emptyContainer: {
-		padding: 20,
+		padding: 32,
+		alignItems: 'center',
 	},
 });
 
