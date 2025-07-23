@@ -1,5 +1,6 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
 import {FlightSearchParams, FlightSearchResponse, ApiResponse} from '../types';
+import {logApiRequest, logApiResponse, logError} from '../utils/ReactotronLogger';
 
 // API Configuration
 const API_BASE_URL = 'https://sky-scrapper.p.rapidapi.com';
@@ -22,17 +23,30 @@ export const apiGet = async <T>(
 	params?: Record<string, any>
 ): Promise<ApiResponse<T>> => {
 	try {
+		// Log the request to Reactotron
+		logApiRequest('GET', `${API_BASE_URL}${endpoint}`, params);
+
 		const response: AxiosResponse<T> = await apiClient.get(endpoint, {params});
+
+		// Log successful response to Reactotron
+		logApiResponse('GET', `${API_BASE_URL}${endpoint}`, response.data, true);
+
 		return {
 			success: true,
 			data: response.data,
 		};
 	} catch (error: any) {
-		console.error('API Error:', error);
+		// Log error to both console and Reactotron
+		const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+		logError('API GET Error:', {endpoint, params, error: errorMessage});
+
+		// Log failed response to Reactotron
+		logApiResponse('GET', `${API_BASE_URL}${endpoint}`, error.response?.data || error.message, false);
+
 		return {
 			success: false,
 			data: {} as T,
-			error: error.response?.data?.message || error.message || 'An error occurred',
+			error: errorMessage,
 		};
 	}
 };
@@ -43,17 +57,30 @@ export const apiPost = async <T>(
 	data?: Record<string, any>
 ): Promise<ApiResponse<T>> => {
 	try {
+		// Log the request to Reactotron
+		logApiRequest('POST', `${API_BASE_URL}${endpoint}`, data);
+
 		const response: AxiosResponse<T> = await apiClient.post(endpoint, data);
+
+		// Log successful response to Reactotron
+		logApiResponse('POST', `${API_BASE_URL}${endpoint}`, response.data, true);
+
 		return {
 			success: true,
 			data: response.data,
 		};
 	} catch (error: any) {
-		console.error('API Error:', error);
+		// Log error to both console and Reactotron
+		const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+		logError('API POST Error:', {endpoint, data, error: errorMessage});
+
+		// Log failed response to Reactotron
+		logApiResponse('POST', `${API_BASE_URL}${endpoint}`, error.response?.data || error.message, false);
+
 		return {
 			success: false,
 			data: {} as T,
-			error: error.response?.data?.message || error.message || 'An error occurred',
+			error: errorMessage,
 		};
 	}
 };

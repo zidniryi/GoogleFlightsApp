@@ -4,6 +4,11 @@ import {Provider as PaperProvider, DefaultTheme} from 'react-native-paper';
 import {AuthProvider} from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
+// Import Reactotron configuration (must be imported before everything else in development)
+if (__DEV__) {
+	import('./src/config/ReactotronConfig');
+}
+
 // Custom theme for React Native Paper
 const theme = {
 	...DefaultTheme,
