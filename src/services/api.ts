@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
-import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse, NearbyAirportsResponse, LocationCoordinates, SearchAirportResponse, FlightDetailsParams, FlightDetailsResponse, HotelDestinationSearchParams, HotelDestinationSearchResponse} from '../types';
+import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse, NearbyAirportsResponse, LocationCoordinates, SearchAirportResponse, FlightDetailsParams, FlightDetailsResponse, HotelDestinationSearchParams, HotelDestinationSearchResponse, CarLocationSearchParams, CarLocationSearchResponse} from '../types';
 import {logApiRequest, logApiResponse, logError} from '../utils/ReactotronLogger';
 
 // API Configuration
@@ -138,6 +138,16 @@ export const searchHotelDestinations = async (
 		locale: locale || 'en-US',
 	};
 	return apiGet<HotelDestinationSearchResponse>('/api/v1/hotels/searchDestinationOrHotel', params);
+};
+
+// Search Car Rental Locations by query
+export const searchCarLocations = async (
+	query: string
+): Promise<ApiResponse<CarLocationSearchResponse>> => {
+	const params = {
+		query,
+	};
+	return apiGet<CarLocationSearchResponse>('/api/v1/cars/searchLocation', params);
 };
 
 // Mock flight data for development/testing (using legacy format)

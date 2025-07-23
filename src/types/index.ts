@@ -380,6 +380,10 @@ export type MainTabParamList = {
 	Hotels: {
 		preselectedDestination?: HotelDestination;
 	};
+	Cars: {
+		preselectedPickupLocation?: CarLocation;
+		preselectedDropoffLocation?: CarLocation;
+	};
 	Profile: undefined;
 };
 
@@ -575,4 +579,50 @@ export interface HotelSearchFilters {
 	guestRating: number;
 	propertyType: string[];
 	sortBy: 'price' | 'rating' | 'distance' | 'popularity';
+}
+
+// Car Rental Types
+export interface CarLocation {
+	hierarchy: string;
+	location: string; // "latitude, longitude"
+	entityName: string;
+	highlight: {
+		entity_name: string;
+		hierarchy: string;
+	};
+	entityId: string;
+	class: 'City' | 'Airport' | 'Region';
+}
+
+export interface CarLocationSearchResponse {
+	status: boolean;
+	timestamp: number;
+	data: CarLocation[];
+}
+
+export interface CarLocationSearchParams {
+	query: string;
+}
+
+export interface CarSearchFormData {
+	pickupLocation: CarLocation | null;
+	dropoffLocation: CarLocation | null;
+	pickupDate: Date | null;
+	dropoffDate: Date | null;
+	pickupTime: string;
+	dropoffTime: string;
+	sameLocation: boolean;
+	driverAge: number;
+}
+
+export interface CarSearchFilters {
+	priceRange: {
+		min: number;
+		max: number;
+	};
+	carType: string[];
+	transmission: 'automatic' | 'manual' | 'both';
+	fuelPolicy: string[];
+	supplier: string[];
+	sortBy: 'price' | 'rating' | 'distance' | 'car_type';
 } 
