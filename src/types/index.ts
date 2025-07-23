@@ -104,6 +104,62 @@ export interface LocaleResponse {
 	data: Locale[];
 }
 
+// Nearby Airports Types
+export interface AirportPresentation {
+	title: string;
+	suggestionTitle: string;
+	subtitle: string;
+}
+
+export interface FlightParams {
+	skyId: string;
+	entityId: string;
+	flightPlaceType: string;
+	localizedName: string;
+}
+
+export interface HotelParams {
+	entityId: string;
+	entityType: string;
+	localizedName: string;
+}
+
+export interface AirportNavigation {
+	entityId: string;
+	entityType: string;
+	localizedName: string;
+	relevantFlightParams: FlightParams;
+	relevantHotelParams: HotelParams;
+}
+
+export interface NearbyAirport {
+	presentation: AirportPresentation;
+	navigation: AirportNavigation;
+}
+
+export interface CurrentAirport extends NearbyAirport {
+	skyId: string;
+	entityId: string;
+}
+
+export interface NearbyAirportsData {
+	current: CurrentAirport;
+	nearby: NearbyAirport[];
+	recent: NearbyAirport[];
+}
+
+export interface NearbyAirportsResponse {
+	status: boolean;
+	timestamp: number;
+	data: NearbyAirportsData;
+}
+
+export interface LocationCoordinates {
+	latitude: number;
+	longitude: number;
+	accuracy?: number;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
 	success: boolean;
@@ -116,7 +172,11 @@ export interface ApiResponse<T> {
 export type RootStackParamList = {
 	Auth: undefined;
 	Main: undefined;
-	FlightDetails: {flight: Flight};
+	NearbyAirports: {
+		selectionMode?: 'departure' | 'arrival';
+		onAirportSelect?: (airport: NearbyAirport | CurrentAirport) => void;
+	};
+	LanguageSelector: undefined;
 };
 
 export type AuthStackParamList = {
@@ -125,8 +185,20 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-	Search: undefined;
-	Results: {searchParams: FlightSearchParams; flights: Flight[]} | undefined;
+	Search: {
+		preselectedDeparture?: {
+			code: string;
+			name: string;
+		};
+		preselectedArrival?: {
+			code: string;
+			name: string;
+		};
+	} | undefined;
+	Results: {
+		searchParams: FlightSearchParams;
+		flights: Flight[];
+	};
 	Profile: undefined;
 };
 

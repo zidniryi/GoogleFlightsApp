@@ -155,6 +155,16 @@ const ProfileScreen: React.FC<Props> = ({navigation}) => {
 					<Divider />
 
 					<List.Item
+						title="Nearby Airports"
+						description="Find airports near your location"
+						left={props => <List.Icon {...props} icon="airplane-landing" />}
+						right={props => <List.Icon {...props} icon="chevron-right" />}
+						onPress={() => navigation.navigate('NearbyAirports', {})}
+					/>
+
+					<Divider />
+
+					<List.Item
 						title="Notifications"
 						description="Manage notification preferences"
 						left={props => <List.Icon {...props} icon="bell" />}

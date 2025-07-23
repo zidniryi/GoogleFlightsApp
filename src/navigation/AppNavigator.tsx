@@ -16,6 +16,8 @@ import SignUpScreen from '../screens/auth/SignUpScreen';
 import FlightSearchScreen from '../screens/main/FlightSearchScreen';
 import FlightResultsScreen from '../screens/main/FlightResultsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import NearbyAirportsScreen from '../screens/main/NearbyAirportsScreen';
+import LanguageScreen from '../screens/main/LanguageScreen';
 import Colors from "../themes/Colors";
 
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -116,7 +118,39 @@ const AppNavigator = () => {
 		<NavigationContainer>
 			<RootStack.Navigator screenOptions={{headerShown: false}}>
 				{user ? (
-					<RootStack.Screen name="Main" component={MainTabNavigator} />
+					<>
+						<RootStack.Screen name="Main" component={MainTabNavigator} />
+						<RootStack.Screen
+							name="NearbyAirports"
+							component={NearbyAirportsScreen}
+							options={{
+								headerShown: true,
+								title: 'Nearby Airports',
+								headerStyle: {
+									backgroundColor: Colors.primary.main,
+								},
+								headerTintColor: Colors.text.inverse,
+								headerTitleStyle: {
+									fontWeight: 'bold',
+								},
+							}}
+						/>
+						<RootStack.Screen
+							name="LanguageSelector"
+							component={LanguageScreen}
+							options={{
+								headerShown: true,
+								title: 'Language Settings',
+								headerStyle: {
+									backgroundColor: Colors.primary.main,
+								},
+								headerTintColor: Colors.text.inverse,
+								headerTitleStyle: {
+									fontWeight: 'bold',
+								},
+							}}
+						/>
+					</>
 				) : (
 					<RootStack.Screen name="Auth" component={AuthNavigator} />
 				)}

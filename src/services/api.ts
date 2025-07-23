@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
-import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse} from '../types';
+import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse, NearbyAirportsResponse, LocationCoordinates} from '../types';
 import {logApiRequest, logApiResponse, logError} from '../utils/ReactotronLogger';
 
 // API Configuration
@@ -133,6 +133,19 @@ export const getAirportSuggestions = async (
 // Get Available Locales/Languages
 export const getLocales = async (): Promise<ApiResponse<LocaleResponse>> => {
 	return apiGet<LocaleResponse>('/api/v1/getLocale');
+};
+
+// Get Nearby Airports based on coordinates
+export const getNearbyAirports = async (
+	coordinates: LocationCoordinates,
+	locale?: string
+): Promise<ApiResponse<NearbyAirportsResponse>> => {
+	const params = {
+		lat: coordinates.latitude,
+		lng: coordinates.longitude,
+		locale: locale || 'en-US',
+	};
+	return apiGet<NearbyAirportsResponse>('/api/v1/flights/getNearByAirports', params);
 };
 
 // Mock flight data for development/testing

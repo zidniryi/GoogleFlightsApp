@@ -45,5 +45,12 @@ export {
 } from './LanguageSelector';
 export {LocaleApiDemo} from './LocaleApiDemo';
 
+// Location Components
+export {NearbyAirports} from './NearbyAirports';
+export {QuickAirportSelector} from './QuickAirportSelector';
+
 // Example/Demo Components
-export {ComponentShowcase} from './ComponentShowcase'; 
+export {ComponentShowcase} from './ComponentShowcase';
+
+// Screen Components
+export {NearbyAirportsScreen} from '../screens/main/NearbyAirportsScreen'; 

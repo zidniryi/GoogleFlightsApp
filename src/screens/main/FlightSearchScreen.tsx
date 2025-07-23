@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
 	View,
 	StyleSheet,
@@ -23,12 +23,21 @@ import {FlightSearchFormValues, FlightSearchParams} from '../../types';
 import {searchFlights, getMockFlights} from '../../services/api';
 import {format} from 'date-fns';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
-import {MainTabParamList} from '../../types';
+import {CompositeNavigationProp, RouteProp} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {MainTabParamList, RootStackParamList} from '../../types';
+import {QuickAirportSelector} from '../../components';
 
-type FlightSearchScreenNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Search'>;
+type FlightSearchScreenNavigationProp = CompositeNavigationProp<
+	BottomTabNavigationProp<MainTabParamList, 'Search'>,
+	StackNavigationProp<RootStackParamList>
+>;
+
+type FlightSearchScreenRouteProp = RouteProp<MainTabParamList, 'Search'>;
 
 interface Props {
 	navigation: FlightSearchScreenNavigationProp;
+	route: FlightSearchScreenRouteProp;
 }
 
 // Validation Schema
@@ -39,14 +48,18 @@ const searchValidationSchema = Yup.object().shape({
 	adults: Yup.number().min(1, 'At least 1 adult required').required('Number of adults is required'),
 });
 
-const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
+const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 	const [loading, setLoading] = useState(false);
 	const [showDepartDatePicker, setShowDepartDatePicker] = useState(false);
 	const [showReturnDatePicker, setShowReturnDatePicker] = useState(false);
 
+	// Get preselected airports from navigation params
+	const preselectedDeparture = route.params?.preselectedDeparture;
+	const preselectedArrival = route.params?.preselectedArrival;
+
 	const initialValues: FlightSearchFormValues = {
-		origin: '',
-		destination: '',
+		origin: preselectedDeparture?.code || '',
+		destination: preselectedArrival?.code || '',
 		departDate: format(new Date(), 'yyyy-MM-dd'),
 		returnDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow
 		adults: 1,
@@ -75,7 +88,7 @@ const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
 					flights: response.data.flights,
 				});
 			} else {
-				Alert.alert('Search Failed', response.error || 'Unable to search flights');
+				Alert.alert('Search Failed', 'Unable to search flights. Please try again.');
 			}
 		} catch (error: any) {
 			Alert.alert('Search Error', error.message);
@@ -90,6 +103,28 @@ const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
 		setFieldValue('destination', temp);
 	};
 
+	// Handle airport selection from nearby airports
+	const handleAirportSelect = (airport: any, field: 'origin' | 'destination', setFieldValue: any) => {
+		const airportCode = airport.navigation.relevantFlightParams.skyId;
+		setFieldValue(field, airportCode);
+		Alert.alert(
+			'Airport Selected',
+			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airport.presentation.title} (${airportCode})`
+		);
+	};
+
+	// Handle navigation reset when screen comes into focus
+	useEffect(() => {
+		const unsubscribe = navigation.addListener('focus', () => {
+			// Reset navigation params to avoid stale data
+			if (route.params) {
+				navigation.setParams({} as any);
+			}
+		});
+
+		return unsubscribe;
+	}, [navigation, route.params]);
+
 	return (
 		<ScrollView style={styles.container}>
 			<View style={styles.header}>
@@ -97,10 +132,52 @@ const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
 				<Text style={styles.subtitle}>Find the best deals for your next trip</Text>
 			</View>
 
+			{/* Quick Airport Selector */}
+			<Card style={styles.card}>
+				<Card.Content>
+					<Text style={styles.sectionTitle}>Quick Airport Selection</Text>
+					<Text style={styles.sectionSubtitle}>Choose from nearby airports</Text>
+
+					<Formik
+						initialValues={initialValues}
+						validationSchema={searchValidationSchema}
+						onSubmit={handleSearch}
+						enableReinitialize={true}
+					>
+						{({setFieldValue, values}) => (
+							<QuickAirportSelector
+								compact={true}
+								maxAirports={4}
+								onAirportSelect={(airport) => {
+									// Smart selection: if origin is empty, fill it; otherwise fill destination
+									if (!values.origin) {
+										handleAirportSelect(airport, 'origin', setFieldValue);
+									} else if (!values.destination) {
+										handleAirportSelect(airport, 'destination', setFieldValue);
+									} else {
+										// Both filled, ask user which to replace
+										Alert.alert(
+											'Select Field',
+											'Which field would you like to update?',
+											[
+												{text: 'Departure', onPress: () => handleAirportSelect(airport, 'origin', setFieldValue)},
+												{text: 'Arrival', onPress: () => handleAirportSelect(airport, 'destination', setFieldValue)},
+												{text: 'Cancel', style: 'cancel'},
+											]
+										);
+									}
+								}}
+							/>
+						)}
+					</Formik>
+				</Card.Content>
+			</Card>
+
 			<Formik
 				initialValues={initialValues}
 				validationSchema={searchValidationSchema}
 				onSubmit={handleSearch}
+				enableReinitialize={true}
 			>
 				{({
 					handleChange,
@@ -150,6 +227,16 @@ const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
 											style={styles.airportInput}
 											error={touched.origin && !!errors.origin}
 											placeholder="JFK, LAX, etc."
+											right={
+												<TextInput.Icon
+													icon="map-marker"
+													onPress={() =>
+														navigation.navigate('NearbyAirports', {
+															selectionMode: 'departure'
+														})
+													}
+												/>
+											}
 										/>
 										<HelperText type="error" visible={touched.origin && !!errors.origin}>
 											{errors.origin}
@@ -173,6 +260,16 @@ const FlightSearchScreen: React.FC<Props> = ({navigation}) => {
 											style={styles.airportInput}
 											error={touched.destination && !!errors.destination}
 											placeholder="JFK, LAX, etc."
+											right={
+												<TextInput.Icon
+													icon="map-marker"
+													onPress={() =>
+														navigation.navigate('NearbyAirports', {
+															selectionMode: 'arrival'
+														})
+													}
+												/>
+											}
 										/>
 										<HelperText type="error" visible={touched.destination && !!errors.destination}>
 											{errors.destination}
@@ -335,6 +432,11 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		fontWeight: 'bold',
 		marginBottom: 16,
+	},
+	sectionSubtitle: {
+		fontSize: 14,
+		color: '#666',
+		marginBottom: 12,
 	},
 	radioContainer: {
 		flexDirection: 'row',

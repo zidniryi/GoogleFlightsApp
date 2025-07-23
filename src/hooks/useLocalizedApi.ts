@@ -3,8 +3,9 @@ import {
 	searchFlights as baseSearchFlights,
 	getAirportSuggestions as baseGetAirportSuggestions,
 	getFlightDetails,
+	getNearbyAirports as baseGetNearbyAirports,
 } from '../services/api';
-import {FlightSearchParams, FlightSearchResponse, ApiResponse} from '../types';
+import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocationCoordinates, NearbyAirportsResponse} from '../types';
 
 /**
  * Custom hook that provides API functions with automatic locale injection
@@ -33,10 +34,17 @@ export const useLocalizedApi = () => {
 		return getFlightDetails(flightId);
 	};
 
+	const getNearbyAirports = async (
+		coordinates: LocationCoordinates
+	): Promise<ApiResponse<NearbyAirportsResponse>> => {
+		return baseGetNearbyAirports(coordinates, currentLocale?.id);
+	};
+
 	return {
 		searchFlights,
 		getAirportSuggestions,
 		getFlightDetails: getFlightDetailsWithLocale,
+		getNearbyAirports,
 		currentLocale,
 	};
 };
