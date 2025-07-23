@@ -38,7 +38,7 @@ type SortOption = 'best' | 'cheapest' | 'fastest' | 'departure';
 type FilterOption = 'all' | 'direct' | 'oneStop' | 'twoOrMore';
 
 const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
-	const {searchParams, response: initialResponse} = route.params;
+	const {searchParams, response: initialResponse} = route.params || {};
 
 	const [response, setResponse] = useState<FlightSearchResponse | null>(initialResponse || null);
 	const [loading, setLoading] = useState(!initialResponse);
@@ -49,12 +49,18 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 
 	// Load initial data if not provided
 	React.useEffect(() => {
-		if (!initialResponse) {
+		if (!initialResponse && searchParams) {
 			loadFlights();
 		}
 	}, []);
 
 	const loadFlights = async () => {
+		if (!searchParams) {
+			console.warn('No search parameters available');
+			setLoading(false);
+			return;
+		}
+
 		try {
 			setLoading(true);
 			const result = await searchFlights(searchParams);
@@ -72,6 +78,9 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 	};
 
 	const handleRefresh = async () => {
+		if (!searchParams) {
+			return;
+		}
 		setRefreshing(true);
 		await loadFlights();
 		setRefreshing(false);
@@ -203,6 +212,20 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 	);
 
 	const renderContent = () => {
+		// Handle case when no search parameters are available
+		if (!searchParams) {
+			return (
+				<View style={styles.centerContainer}>
+					<EmptyState
+						title="No flight search"
+						description="Start a new flight search to see results here"
+						actionLabel="Search Flights"
+						onAction={() => navigation.navigate('Search', {})}
+					/>
+				</View>
+			);
+		}
+
 		if (loading) {
 			return (
 				<View style={styles.centerContainer}>
@@ -218,7 +241,7 @@ const FlightResultsScreen: React.FC<Props> = ({navigation, route}) => {
 						title="No flights found"
 						description="Try adjusting your search criteria or dates"
 						actionLabel="New Search"
-						onAction={() => navigation.goBack()}
+						onAction={() => navigation.navigate('Search', {})}
 					/>
 				</View>
 			);

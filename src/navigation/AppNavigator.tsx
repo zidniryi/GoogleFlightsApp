@@ -59,50 +59,48 @@ const MainTabNavigator = () => {
 
 const AppNavigator = () => {
 	return (
-		<NavigationContainer>
-			<Stack.Navigator
-				initialRouteName="Main"
-				screenOptions={{
-					headerStyle: {
-						backgroundColor: '#2196F3',
-					},
-					headerTintColor: '#fff',
-					headerTitleStyle: {
-						fontWeight: 'bold',
-					},
+		<Stack.Navigator
+			initialRouteName="Main"
+			screenOptions={{
+				headerStyle: {
+					backgroundColor: '#2196F3',
+				},
+				headerTintColor: '#fff',
+				headerTitleStyle: {
+					fontWeight: 'bold',
+				},
+			}}
+		>
+			<Stack.Screen
+				name="Main"
+				component={MainTabNavigator}
+				options={{headerShown: false}}
+			/>
+			<Stack.Screen
+				name="NearbyAirports"
+				component={NearbyAirportsScreen}
+				options={{
+					title: 'Nearby Airports',
+					presentation: 'modal',
 				}}
-			>
-				<Stack.Screen
-					name="Main"
-					component={MainTabNavigator}
-					options={{headerShown: false}}
-				/>
-				<Stack.Screen
-					name="NearbyAirports"
-					component={NearbyAirportsScreen}
-					options={{
-						title: 'Nearby Airports',
-						presentation: 'modal',
-					}}
-				/>
-				<Stack.Screen
-					name="LanguageSelector"
-					component={LanguageSelector}
-					options={{
-						title: 'Select Language',
-						presentation: 'modal',
-					}}
-				/>
-				<Stack.Screen
-					name="FlightDetails"
-					component={FlightDetailsScreen}
-					options={{
-						title: 'Flight Details',
-						presentation: 'card',
-					}}
-				/>
-			</Stack.Navigator>
-		</NavigationContainer>
+			/>
+			<Stack.Screen
+				name="LanguageSelector"
+				component={LanguageSelector}
+				options={{
+					title: 'Select Language',
+					presentation: 'modal',
+				}}
+			/>
+			<Stack.Screen
+				name="FlightDetails"
+				component={FlightDetailsScreen}
+				options={{
+					title: 'Flight Details',
+					presentation: 'card',
+				}}
+			/>
+		</Stack.Navigator>
 	);
 };
 

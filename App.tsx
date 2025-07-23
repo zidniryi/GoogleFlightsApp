@@ -1,9 +1,12 @@
 import React from 'react';
 import {StatusBar} from 'expo-status-bar';
 import {Provider as PaperProvider, DefaultTheme} from 'react-native-paper';
-import {AuthProvider} from './src/context/AuthContext';
+import {NavigationContainer} from '@react-navigation/native';
+import {AuthProvider, useAuth} from './src/context/AuthContext';
 import {LocaleProvider} from './src/context/LocaleContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import AuthNavigator from './src/navigation/AuthNavigator';
+import {LoadingSpinner} from './src/components';
 
 // Import Reactotron configuration (must be imported before everything else in development)
 if (__DEV__) {
@@ -24,13 +27,29 @@ const theme = {
 	},
 };
 
+// Navigation component that handles auth state
+const Navigation = () => {
+	const {user, loading} = useAuth();
+
+	if (loading) {
+		return <LoadingSpinner message="Loading..." />;
+	}
+
+	// If user is authenticated, show main app, otherwise show auth screens
+	return (
+		<NavigationContainer>
+			{user ? <AppNavigator /> : <AuthNavigator />}
+		</NavigationContainer>
+	);
+};
+
 export default function App() {
 	return (
 		<PaperProvider theme={theme}>
 			<LocaleProvider>
 				<AuthProvider>
 					<StatusBar style="auto" />
-					<AppNavigator />
+					<Navigation />
 				</AuthProvider>
 			</LocaleProvider>
 		</PaperProvider>
