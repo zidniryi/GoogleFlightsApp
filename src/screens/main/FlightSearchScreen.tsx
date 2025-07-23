@@ -496,24 +496,41 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 						{/* Passengers */}
 						<Card style={styles.card}>
 							<Card.Content>
-								<Text style={styles.sectionTitle}>Passengers</Text>
-								<View style={styles.passengerContainer}>
-									<Text style={styles.passengerLabel}>Adults</Text>
-									<View style={styles.passengerControls}>
+								<Text style={styles.sectionTitle}>👥 Passengers</Text>
+								<View style={styles.modernPassengerContainer}>
+									<View style={styles.passengerInfo}>
+										<Text style={styles.modernPassengerLabel}>Adults</Text>
+										<Text style={styles.passengerSubtitle}>Age 18+</Text>
+									</View>
+									<View style={styles.modernPassengerControls}>
 										<Button
-											mode="outlined"
+											mode="contained"
 											compact
 											onPress={() => setFieldValue('adults', Math.max(1, values.adults - 1))}
 											disabled={values.adults <= 1}
+											style={[
+												styles.passengerButton,
+												values.adults <= 1 && styles.passengerButtonDisabled
+											]}
+											contentStyle={styles.passengerButtonContent}
+											labelStyle={styles.passengerButtonLabel}
 										>
-											-
+											−
 										</Button>
-										<Text style={styles.passengerCount}>{values.adults}</Text>
+										<View style={styles.passengerCountContainer}>
+											<Text style={styles.modernPassengerCount}>{values.adults}</Text>
+										</View>
 										<Button
-											mode="outlined"
+											mode="contained"
 											compact
 											onPress={() => setFieldValue('adults', Math.min(9, values.adults + 1))}
 											disabled={values.adults >= 9}
+											style={[
+												styles.passengerButton,
+												values.adults >= 9 && styles.passengerButtonDisabled
+											]}
+											contentStyle={styles.passengerButtonContent}
+											labelStyle={styles.passengerButtonLabel}
 										>
 											+
 										</Button>
@@ -648,20 +665,91 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		alignItems: 'center',
 	},
+	modernPassengerContainer: {
+		backgroundColor: '#f8fafc',
+		borderRadius: 16,
+		padding: 20,
+		marginTop: 8,
+	},
+	passengerInfo: {
+		marginBottom: 16,
+	},
 	passengerLabel: {
 		fontSize: 16,
 		fontWeight: '500',
+	},
+	modernPassengerLabel: {
+		fontSize: 18,
+		fontWeight: '700',
+		color: '#1e293b',
+		marginBottom: 4,
+	},
+	passengerSubtitle: {
+		fontSize: 14,
+		color: '#64748b',
+		fontWeight: '400',
 	},
 	passengerControls: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 16,
 	},
+	modernPassengerControls: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 24,
+		backgroundColor: 'white',
+		borderRadius: 12,
+		padding: 12,
+		elevation: 2,
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 2,
+		},
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+	},
+	passengerButton: {
+		backgroundColor: '#3b82f6',
+		borderRadius: 20,
+		minWidth: 44,
+		height: 44,
+	},
+	passengerButtonDisabled: {
+		backgroundColor: '#e2e8f0',
+	},
+	passengerButtonContent: {
+		width: 44,
+		height: 44,
+	},
+	passengerButtonLabel: {
+		fontSize: 20,
+		fontWeight: '700',
+		color: 'white',
+	},
 	passengerCount: {
 		fontSize: 18,
 		fontWeight: 'bold',
 		minWidth: 30,
 		textAlign: 'center',
+	},
+	modernPassengerCount: {
+		fontSize: 24,
+		fontWeight: '700',
+		color: '#1e293b',
+		textAlign: 'center',
+		minWidth: 40,
+	},
+	passengerCountContainer: {
+		backgroundColor: '#f1f5f9',
+		borderRadius: 12,
+		paddingHorizontal: 20,
+		paddingVertical: 12,
+		minWidth: 60,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	searchButton: {
 		marginTop: 24,
