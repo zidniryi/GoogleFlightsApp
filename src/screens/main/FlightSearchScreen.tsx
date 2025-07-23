@@ -26,7 +26,7 @@ import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {CompositeNavigationProp, RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {MainTabParamList, RootStackParamList} from '../../types';
-import {QuickAirportSelector} from '../../components';
+import {QuickAirportSelector, AirportSearchInput} from '../../components';
 
 type FlightSearchScreenNavigationProp = CompositeNavigationProp<
 	BottomTabNavigationProp<MainTabParamList, 'Search'>,
@@ -110,6 +110,17 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 		Alert.alert(
 			'Airport Selected',
 			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airport.presentation.title} (${airportCode})`
+		);
+	};
+
+	// Handle airport selection from search
+	const handleSearchAirportSelect = (airport: any, field: 'origin' | 'destination', setFieldValue: any) => {
+		const airportCode = airport.skyId;
+		const airportName = airport.presentation.title;
+		setFieldValue(field, airportCode);
+		Alert.alert(
+			'Airport Selected',
+			`${field === 'origin' ? 'Departure' : 'Arrival'} airport set to: ${airportName} (${airportCode})`
 		);
 	};
 
@@ -212,31 +223,20 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 							</Card.Content>
 						</Card>
 
-						{/* Airport Selection */}
+						{/* Airport Selection with Search */}
 						<Card style={styles.card}>
 							<Card.Content>
 								<Text style={styles.sectionTitle}>Airports</Text>
 								<View style={styles.airportContainer}>
 									<View style={styles.airportInputContainer}>
-										<TextInput
+										<AirportSearchInput
 											label="From"
 											value={values.origin}
-											onChangeText={handleChange('origin')}
-											onBlur={handleBlur('origin')}
-											mode="outlined"
-											style={styles.airportInput}
+											onValueChange={(value) => setFieldValue('origin', value)}
+											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'origin', setFieldValue)}
+											placeholder="Search departure airport..."
 											error={touched.origin && !!errors.origin}
-											placeholder="JFK, LAX, etc."
-											right={
-												<TextInput.Icon
-													icon="map-marker"
-													onPress={() =>
-														navigation.navigate('NearbyAirports', {
-															selectionMode: 'departure'
-														})
-													}
-												/>
-											}
+											style={styles.airportInput}
 										/>
 										<HelperText type="error" visible={touched.origin && !!errors.origin}>
 											{errors.origin}
@@ -251,29 +251,51 @@ const FlightSearchScreen: React.FC<Props> = ({navigation, route}) => {
 									/>
 
 									<View style={styles.airportInputContainer}>
-										<TextInput
+										<AirportSearchInput
 											label="To"
 											value={values.destination}
-											onChangeText={handleChange('destination')}
-											onBlur={handleBlur('destination')}
-											mode="outlined"
-											style={styles.airportInput}
+											onValueChange={(value) => setFieldValue('destination', value)}
+											onAirportSelect={(airport) => handleSearchAirportSelect(airport, 'destination', setFieldValue)}
+											placeholder="Search arrival airport..."
 											error={touched.destination && !!errors.destination}
-											placeholder="JFK, LAX, etc."
-											right={
-												<TextInput.Icon
-													icon="map-marker"
-													onPress={() =>
-														navigation.navigate('NearbyAirports', {
-															selectionMode: 'arrival'
-														})
-													}
-												/>
-											}
+											style={styles.airportInput}
 										/>
 										<HelperText type="error" visible={touched.destination && !!errors.destination}>
 											{errors.destination}
 										</HelperText>
+									</View>
+								</View>
+
+								{/* Alternative: Nearby Airports Buttons */}
+								<View style={styles.alternativeOptions}>
+									<Text style={styles.alternativeTitle}>Or choose from nearby:</Text>
+									<View style={styles.nearbyButtons}>
+										<Button
+											mode="outlined"
+											compact
+											icon="map-marker"
+											onPress={() =>
+												navigation.navigate('NearbyAirports', {
+													selectionMode: 'departure'
+												})
+											}
+											style={styles.nearbyButton}
+										>
+											Nearby Departure
+										</Button>
+										<Button
+											mode="outlined"
+											compact
+											icon="map-marker"
+											onPress={() =>
+												navigation.navigate('NearbyAirports', {
+													selectionMode: 'arrival'
+												})
+											}
+											style={styles.nearbyButton}
+										>
+											Nearby Arrival
+										</Button>
 									</View>
 								</View>
 							</Card.Content>
@@ -448,10 +470,11 @@ const styles = StyleSheet.create({
 	},
 	airportContainer: {
 		flexDirection: 'row',
-		alignItems: 'center',
+		alignItems: 'flex-start',
 	},
 	airportInputContainer: {
 		flex: 1,
+		zIndex: 1000,
 	},
 	airportInput: {
 		marginHorizontal: 8,
@@ -459,6 +482,25 @@ const styles = StyleSheet.create({
 	swapButton: {
 		alignSelf: 'center',
 		marginHorizontal: 8,
+		marginTop: 8,
+	},
+	alternativeOptions: {
+		marginTop: 16,
+		paddingTop: 16,
+		borderTopWidth: 1,
+		borderTopColor: '#e9ecef',
+	},
+	alternativeTitle: {
+		fontSize: 14,
+		color: '#666',
+		marginBottom: 8,
+	},
+	nearbyButtons: {
+		flexDirection: 'row',
+		gap: 8,
+	},
+	nearbyButton: {
+		flex: 1,
 	},
 	dateContainer: {
 		flexDirection: 'row',

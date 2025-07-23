@@ -1,39 +1,10 @@
-// Button Components
+// Core UI Components
 export {CustomButton} from './CustomButton';
-
-// Text Components
-export {
-	CustomText,
-	Heading1,
-	Heading2,
-	Heading3,
-	BodyText,
-	Caption
-} from './CustomText';
-
-// Card Components
+export {CustomText, Heading1, Heading2, Heading3, BodyText, Caption} from './CustomText';
 export {CustomCard} from './CustomCard';
-
-// Input Components
 export {CustomInput} from './CustomInput';
-
-// Loading Components
-export {
-	LoadingSpinner,
-	InlineLoader,
-	OverlayLoader,
-	FullScreenLoader
-} from './LoadingSpinner';
-
-// Empty State Components
-export {
-	EmptyState,
-	NoFlightsFound,
-	NoSearchResults,
-	NetworkError
-} from './EmptyState';
-
-// Layout Components
+export {LoadingSpinner} from './LoadingSpinner';
+export {EmptyState} from './EmptyState';
 export {SafeAreaContainer} from './SafeAreaContainer';
 
 // Language Components
@@ -48,6 +19,9 @@ export {LocaleApiDemo} from './LocaleApiDemo';
 // Location Components
 export {NearbyAirports} from './NearbyAirports';
 export {QuickAirportSelector} from './QuickAirportSelector';
+
+// Search Components
+export {AirportSearchInput} from './AirportSearchInput';
 
 // Example/Demo Components
 export {ComponentShowcase} from './ComponentShowcase';

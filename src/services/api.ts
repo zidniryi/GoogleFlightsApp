@@ -1,133 +1,77 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
-import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse, NearbyAirportsResponse, LocationCoordinates} from '../types';
+import {FlightSearchParams, FlightSearchResponse, ApiResponse, LocaleResponse, NearbyAirportsResponse, LocationCoordinates, SearchAirportResponse} from '../types';
 import {logApiRequest, logApiResponse, logError} from '../utils/ReactotronLogger';
 
 // API Configuration
 const API_BASE_URL = 'https://sky-scrapper.p.rapidapi.com';
-const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || 'YOUR_RAPIDAPI_KEY_HERE';
+const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
 	baseURL: API_BASE_URL,
 	headers: {
-		'X-RapidAPI-Key': API_KEY,
-		'X-RapidAPI-Host': 'sky-scrapper.p.rapidapi.com',
+		'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com',
+		'x-rapidapi-key': API_KEY,
 		'Content-Type': 'application/json',
 	},
-	timeout: 10000,
+	timeout: 30000, // 30 seconds
 });
 
-// Generic API helper function (following user preference for apiGet helper)
-export const apiGet = async <T>(
-	endpoint: string,
-	params?: Record<string, any>
-): Promise<ApiResponse<T>> => {
+// Generic API request helper
+const apiGet = async <T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> => {
 	try {
-		// Log the request to Reactotron
 		logApiRequest('GET', `${API_BASE_URL}${endpoint}`, params);
 
-		const response: AxiosResponse<T> = await apiClient.get(endpoint, {params});
+		const response: AxiosResponse<T> = await apiClient.get(endpoint, {
+			params,
+		});
 
-		// Log successful response to Reactotron
 		logApiResponse('GET', `${API_BASE_URL}${endpoint}`, response.data, true);
 
 		return {
 			success: true,
 			data: response.data,
+			error: undefined,
 		};
 	} catch (error: any) {
-		// Log error to both console and Reactotron
-		const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
-		logError('API GET Error:', {endpoint, params, error: errorMessage});
-
-		// Log failed response to Reactotron
-		logApiResponse('GET', `${API_BASE_URL}${endpoint}`, error.response?.data || error.message, false);
+		const errorMessage = error.response?.data?.message || error.message || 'API request failed';
+		logError(`API Error (${endpoint}):`, error);
 
 		return {
 			success: false,
-			data: {} as T,
+			data: null as any,
 			error: errorMessage,
 		};
 	}
 };
 
-// Generic API POST helper
-export const apiPost = async <T>(
-	endpoint: string,
-	data?: Record<string, any>
-): Promise<ApiResponse<T>> => {
-	try {
-		// Log the request to Reactotron
-		logApiRequest('POST', `${API_BASE_URL}${endpoint}`, data);
-
-		const response: AxiosResponse<T> = await apiClient.post(endpoint, data);
-
-		// Log successful response to Reactotron
-		logApiResponse('POST', `${API_BASE_URL}${endpoint}`, response.data, true);
-
-		return {
-			success: true,
-			data: response.data,
-		};
-	} catch (error: any) {
-		// Log error to both console and Reactotron
-		const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
-		logError('API POST Error:', {endpoint, data, error: errorMessage});
-
-		// Log failed response to Reactotron
-		logApiResponse('POST', `${API_BASE_URL}${endpoint}`, error.response?.data || error.message, false);
-
-		return {
-			success: false,
-			data: {} as T,
-			error: errorMessage,
-		};
-	}
-};
-
-// Flight Search API with optional locale support
+// Flight search with enhanced locale support
 export const searchFlights = async (
-	searchParams: FlightSearchParams,
+	params: FlightSearchParams,
 	locale?: string
 ): Promise<ApiResponse<FlightSearchResponse>> => {
-	const params = {
-		from: searchParams.origin,
-		to: searchParams.destination,
-		depart: searchParams.departDate,
-		return: searchParams.returnDate,
-		adults: searchParams.adults,
-		children: searchParams.children || 0,
-		infants: searchParams.infants || 0,
-		cabinClass: searchParams.cabinClass || 'economy',
-		currency: 'USD',
-		...(locale && {locale}), // Add locale if provided
+	const searchParams = {
+		...params,
+		locale: locale || 'en-US',
 	};
-
-	// Use different endpoint based on trip type
-	const endpoint = searchParams.tripType === 'roundTrip'
-		? '/api/v1/flights/search-roundtrip'
-		: '/api/v1/flights/search-oneway';
-
-	return apiGet<FlightSearchResponse>(endpoint, params);
+	return apiGet<FlightSearchResponse>('/api/v1/flights/search', searchParams);
 };
 
-// Get Flight Details
-export const getFlightDetails = async (
-	flightId: string
-): Promise<ApiResponse<any>> => {
-	return apiGet(`/api/v1/flights/details/${flightId}`);
-};
-
-// Get Airport Suggestions with optional locale support
+// Airport suggestions with locale support
 export const getAirportSuggestions = async (
 	query: string,
 	locale?: string
 ): Promise<ApiResponse<any>> => {
 	const params = {
 		query,
-		...(locale && {locale}), // Add locale if provided
+		locale: locale || 'en-US',
 	};
-	return apiGet('/api/v1/flights/search-airports', params);
+	return apiGet<any>('/api/v1/flights/searchAirport', params);
+};
+
+// Get flight details
+export const getFlightDetails = async (flightId: string): Promise<ApiResponse<any>> => {
+	return apiGet<any>(`/api/v1/flights/${flightId}`);
 };
 
 // Get Available Locales/Languages
@@ -148,20 +92,32 @@ export const getNearbyAirports = async (
 	return apiGet<NearbyAirportsResponse>('/api/v1/flights/getNearByAirports', params);
 };
 
+// Search Airports by query
+export const searchAirports = async (
+	query: string,
+	locale?: string
+): Promise<ApiResponse<SearchAirportResponse>> => {
+	const params = {
+		query,
+		locale: locale || 'en-US',
+	};
+	return apiGet<SearchAirportResponse>('/api/v1/flights/searchAirport', params);
+};
+
 // Mock flight data for development/testing
-export const getMockFlights = () => {
+export const getMockFlights = (): ApiResponse<FlightSearchResponse> => {
 	return {
 		success: true,
 		data: {
 			flights: [
 				{
 					id: '1',
-					airline: 'United Airlines',
-					flightNumber: 'UA123',
+					airline: 'Delta Airlines',
+					flightNumber: 'DL123',
 					departureAirport: 'JFK',
 					arrivalAirport: 'LAX',
-					departureTime: '2024-02-01T08:00:00Z',
-					arrivalTime: '2024-02-01T11:30:00Z',
+					departureTime: '08:00',
+					arrivalTime: '11:30',
 					duration: '5h 30m',
 					price: 299,
 					stops: 0,
@@ -174,34 +130,19 @@ export const getMockFlights = () => {
 					flightNumber: 'AA456',
 					departureAirport: 'JFK',
 					arrivalAirport: 'LAX',
-					departureTime: '2024-02-01T14:00:00Z',
-					arrivalTime: '2024-02-01T17:45:00Z',
+					departureTime: '14:30',
+					arrivalTime: '18:15',
 					duration: '5h 45m',
-					price: 345,
+					price: 349,
 					stops: 1,
-					currency: 'USD',
-					available: true,
-				},
-				{
-					id: '3',
-					airline: 'Delta Airlines',
-					flightNumber: 'DL789',
-					departureAirport: 'JFK',
-					arrivalAirport: 'LAX',
-					departureTime: '2024-02-01T20:00:00Z',
-					arrivalTime: '2024-02-01T23:20:00Z',
-					duration: '5h 20m',
-					price: 275,
-					stops: 0,
 					currency: 'USD',
 					available: true,
 				},
 			],
 			searchId: 'mock-search-123',
-			totalResults: 3,
+			totalResults: 2,
 			currency: 'USD',
 		},
+		error: undefined,
 	};
-};
-
-export default apiClient; 
+}; 

@@ -160,6 +160,23 @@ export interface LocationCoordinates {
 	accuracy?: number;
 }
 
+// Airport Search Types
+export interface SearchAirportResult {
+	skyId: string;
+	entityId: string;
+	presentation: AirportPresentation;
+	navigation: AirportNavigation;
+}
+
+export interface SearchAirportResponse {
+	status: boolean;
+	timestamp: number;
+	data: SearchAirportResult[];
+}
+
+// Generic Airport Type (for components that handle both nearby and search results)
+export type AirportSearchItem = NearbyAirport | CurrentAirport | SearchAirportResult;
+
 // API Response Types
 export interface ApiResponse<T> {
 	success: boolean;
