@@ -5,6 +5,7 @@ import {
 	FlatList,
 	Pressable,
 	Platform,
+	Modal,
 } from 'react-native';
 import {
 	TextInput,
@@ -12,6 +13,7 @@ import {
 	Divider,
 	ActivityIndicator,
 	Chip,
+	Portal,
 } from 'react-native-paper';
 import {CustomText} from './CustomText';
 import {HotelDestination} from '../types';
@@ -72,37 +74,29 @@ export const HotelDestinationInput: React.FC<HotelDestinationInputProps> = ({
 
 	const handleInputBlur = useCallback(() => {
 		// Delay hiding to allow for item selection
-		setTimeout(() => setShowDropdown(false), 150);
+		setTimeout(() => setShowDropdown(false), 200);
 	}, []);
 
 	const clearInput = useCallback(() => {
 		setInputValue('');
 		setShowDropdown(false);
 		clearResults();
-		// Don't clear the selected value - let parent handle that
 	}, [clearResults]);
-
-	const formatSuggestionText = (suggestItem: string) => {
-		// Remove HTML tags and return clean text
-		return suggestItem
-			.replace(/{strong}/g, '')
-			.replace(/{\/strong}/g, '');
-	};
 
 	const getDestinationIcon = (entityType: string, entityClass: string) => {
 		switch (entityType) {
 			case 'city':
-				return 'city';
+				return '🏙️';
 			case 'region':
-				return 'map';
+				return '🗺️';
 			case 'airport':
-				return 'airplane';
+				return '✈️';
 			case 'hotel':
-				return 'bed';
+				return '🏨';
 			case 'poi':
-				return 'map-marker';
+				return '📍';
 			default:
-				return 'map-marker-outline';
+				return '📍';
 		}
 	};
 
@@ -126,73 +120,71 @@ export const HotelDestinationInput: React.FC<HotelDestinationInputProps> = ({
 	const renderDestinationItem = ({item}: {item: HotelDestination}) => (
 		<Pressable
 			onPress={() => handleDestinationSelect(item)}
+			style={({pressed}) => [
+				styles.destinationItem,
+				pressed && styles.destinationItemPressed
+			]}
 			android_ripple={{color: '#e3f2fd'}}
 		>
-			<View style={styles.destinationItem}>
-				<View style={styles.destinationIcon}>
-					<MaterialCommunityIcons
-						name={getDestinationIcon(item.entityType, item.class) as any}
-						size={24}
-						color="#666"
-					/>
-				</View>
+			<View style={styles.destinationIcon}>
+				<CustomText variant="titleMedium">
+					{getDestinationIcon(item.entityType, item.class)}
+				</CustomText>
+			</View>
 
-				<View style={styles.destinationInfo}>
-					<CustomText variant="bodyLarge" weight="medium" numberOfLines={1}>
-						{item.entityName}
-					</CustomText>
-					<CustomText variant="bodySmall" color="secondary" numberOfLines={1}>
-						{item.hierarchy}
-					</CustomText>
-				</View>
+			<View style={styles.destinationInfo}>
+				<CustomText variant="bodyLarge" weight="medium" numberOfLines={1}>
+					{item.entityName}
+				</CustomText>
+				<CustomText variant="bodySmall" color="secondary" numberOfLines={1}>
+					{item.hierarchy}
+				</CustomText>
+			</View>
 
-				<View style={styles.destinationMeta}>
-					<Chip
-						mode="outlined"
-						compact
-						style={styles.typeChip}
-						textStyle={styles.typeChipText}
-					>
-						{getDestinationTypeLabel(item.entityType, item.class)}
-					</Chip>
-				</View>
+			<View style={styles.destinationMeta}>
+				<Chip
+					mode="outlined"
+					compact
+					style={styles.typeChip}
+					textStyle={styles.typeChipText}
+				>
+					{getDestinationTypeLabel(item.entityType, item.class)}
+				</Chip>
 			</View>
 		</Pressable>
 	);
 
-	const renderDropdown = () => {
-		if (!showDropdown) return null;
+	const renderDropdownContent = () => {
+		if (loading) {
+			return (
+				<View style={styles.loadingContainer}>
+					<ActivityIndicator size="small" />
+					<CustomText variant="bodyMedium" color="secondary" style={styles.loadingText}>
+						Searching destinations...
+					</CustomText>
+				</View>
+			);
+		}
+
+		if (destinations.length === 0 && inputValue.length >= 2) {
+			return (
+				<View style={styles.emptyContainer}>
+					<CustomText variant="bodyMedium" color="secondary">
+						No destinations found for "{inputValue}"
+					</CustomText>
+				</View>
+			);
+		}
 
 		return (
-			<Card style={styles.dropdown} mode="outlined">
-				{loading && (
-					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="small" />
-						<CustomText variant="bodyMedium" color="secondary" style={styles.loadingText}>
-							Searching destinations...
-						</CustomText>
-					</View>
-				)}
-
-				{!loading && destinations.length === 0 && inputValue.length >= 2 && (
-					<View style={styles.emptyContainer}>
-						<CustomText variant="bodyMedium" color="secondary">
-							No destinations found for "{inputValue}"
-						</CustomText>
-					</View>
-				)}
-
-				{destinations.length > 0 && (
-					<FlatList
-						data={destinations.slice(0, 8)} // Limit to 8 results
-						renderItem={renderDestinationItem}
-						keyExtractor={(item) => item.entityId}
-						style={styles.destinationList}
-						keyboardShouldPersistTaps="handled"
-						ItemSeparatorComponent={() => <Divider />}
-					/>
-				)}
-			</Card>
+			<FlatList
+				data={destinations.slice(0, 8)} // Limit to 8 results
+				renderItem={renderDestinationItem}
+				keyExtractor={(item) => item.entityId}
+				style={styles.destinationList}
+				keyboardShouldPersistTaps="handled"
+				ItemSeparatorComponent={() => <Divider />}
+			/>
 		);
 	};
 
@@ -232,15 +224,35 @@ export const HotelDestinationInput: React.FC<HotelDestinationInputProps> = ({
 				</CustomText>
 			)}
 
-			{renderDropdown()}
+			{/* Use Portal to render dropdown above everything else */}
+			<Portal>
+				<Modal
+					visible={showDropdown && destinations.length > 0}
+					transparent
+					animationType="fade"
+					onRequestClose={() => setShowDropdown(false)}
+				>
+					<Pressable
+						style={styles.modalOverlay}
+						onPress={() => setShowDropdown(false)}
+					>
+						<View style={styles.modalContent}>
+							<Card style={styles.dropdownCard} mode="elevated">
+								<Card.Content style={styles.dropdownContent}>
+									{renderDropdownContent()}
+								</Card.Content>
+							</Card>
+						</View>
+					</Pressable>
+				</Modal>
+			</Portal>
 		</View>
 	);
 };
 
 const styles = StyleSheet.create({
 	container: {
-		position: 'relative',
-		zIndex: 1000,
+		marginBottom: 16,
 	},
 	input: {
 		backgroundColor: '#fff',
@@ -249,45 +261,55 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 		marginLeft: 12,
 	},
-	dropdown: {
-		position: 'absolute',
-		top: 64,
-		left: 0,
-		right: 0,
-		maxHeight: 300,
-		elevation: 8,
-		zIndex: 1000,
-		backgroundColor: '#fff',
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.3)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20,
+	},
+	modalContent: {
+		width: '100%',
+		maxWidth: 400,
+		maxHeight: '70%',
+	},
+	dropdownCard: {
+		elevation: 12,
 		...Platform.select({
 			ios: {
 				shadowColor: '#000',
-				shadowOffset: {width: 0, height: 2},
-				shadowOpacity: 0.25,
-				shadowRadius: 8,
+				shadowOffset: {width: 0, height: 6},
+				shadowOpacity: 0.4,
+				shadowRadius: 12,
 			},
 		}),
 	},
-	loadingContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 16,
-		gap: 12,
-	},
-	loadingText: {
-		flex: 1,
-	},
-	emptyContainer: {
-		padding: 16,
-		alignItems: 'center',
+	dropdownContent: {
+		padding: 0,
+		maxHeight: 400,
 	},
 	destinationList: {
-		maxHeight: 250,
+		maxHeight: 380,
+	},
+	loadingContainer: {
+		padding: 32,
+		alignItems: 'center',
+	},
+	loadingText: {
+		marginTop: 12,
+	},
+	emptyContainer: {
+		padding: 32,
+		alignItems: 'center',
 	},
 	destinationItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		padding: 16,
 		gap: 12,
+	},
+	destinationItemPressed: {
+		backgroundColor: '#f5f5f5',
 	},
 	destinationIcon: {
 		width: 40,

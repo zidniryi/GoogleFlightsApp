@@ -5,6 +5,7 @@ import {
 	FlatList,
 	Pressable,
 	Platform,
+	Modal,
 } from 'react-native';
 import {
 	TextInput,
@@ -12,6 +13,7 @@ import {
 	Divider,
 	ActivityIndicator,
 	Chip,
+	Portal,
 } from 'react-native-paper';
 import {CustomText} from './CustomText';
 import {CarLocation} from '../types';
@@ -72,26 +74,25 @@ export const CarLocationInput: React.FC<CarLocationInputProps> = ({
 
 	const handleInputBlur = useCallback(() => {
 		// Delay hiding to allow for item selection
-		setTimeout(() => setShowDropdown(false), 150);
+		setTimeout(() => setShowDropdown(false), 200);
 	}, []);
 
 	const clearInput = useCallback(() => {
 		setInputValue('');
 		setShowDropdown(false);
 		clearResults();
-		// Don't clear the selected value - let parent handle that
 	}, [clearResults]);
 
 	const getLocationIcon = (locationClass: string) => {
 		switch (locationClass) {
 			case 'City':
-				return 'city';
+				return '🏙️';
 			case 'Airport':
-				return 'airplane';
+				return '✈️';
 			case 'Region':
-				return 'map';
+				return '🗺️';
 			default:
-				return 'map-marker-outline';
+				return '📍';
 		}
 	};
 
@@ -111,73 +112,71 @@ export const CarLocationInput: React.FC<CarLocationInputProps> = ({
 	const renderLocationItem = ({item}: {item: CarLocation}) => (
 		<Pressable
 			onPress={() => handleLocationSelect(item)}
+			style={({pressed}) => [
+				styles.locationItem,
+				pressed && styles.locationItemPressed
+			]}
 			android_ripple={{color: '#e3f2fd'}}
 		>
-			<View style={styles.locationItem}>
-				<View style={styles.locationIcon}>
-					<MaterialCommunityIcons
-						name={getLocationIcon(item.class) as any}
-						size={24}
-						color="#666"
-					/>
-				</View>
+			<View style={styles.locationIcon}>
+				<CustomText variant="titleMedium">
+					{getLocationIcon(item.class)}
+				</CustomText>
+			</View>
 
-				<View style={styles.locationInfo}>
-					<CustomText variant="bodyLarge" weight="medium" numberOfLines={1}>
-						{item.entityName}
-					</CustomText>
-					<CustomText variant="bodySmall" color="secondary" numberOfLines={1}>
-						{item.hierarchy}
-					</CustomText>
-				</View>
+			<View style={styles.locationInfo}>
+				<CustomText variant="bodyLarge" weight="medium" numberOfLines={1}>
+					{item.entityName}
+				</CustomText>
+				<CustomText variant="bodySmall" color="secondary" numberOfLines={1}>
+					{item.hierarchy}
+				</CustomText>
+			</View>
 
-				<View style={styles.locationMeta}>
-					<Chip
-						mode="outlined"
-						compact
-						style={styles.typeChip}
-						textStyle={styles.typeChipText}
-					>
-						{getLocationTypeLabel(item.class)}
-					</Chip>
-				</View>
+			<View style={styles.locationMeta}>
+				<Chip
+					mode="outlined"
+					compact
+					style={styles.typeChip}
+					textStyle={styles.typeChipText}
+				>
+					{getLocationTypeLabel(item.class)}
+				</Chip>
 			</View>
 		</Pressable>
 	);
 
-	const renderDropdown = () => {
-		if (!showDropdown) return null;
+	const renderDropdownContent = () => {
+		if (loading) {
+			return (
+				<View style={styles.loadingContainer}>
+					<ActivityIndicator size="small" />
+					<CustomText variant="bodyMedium" color="secondary" style={styles.loadingText}>
+						Searching locations...
+					</CustomText>
+				</View>
+			);
+		}
+
+		if (locations.length === 0 && inputValue.length >= 2) {
+			return (
+				<View style={styles.emptyContainer}>
+					<CustomText variant="bodyMedium" color="secondary">
+						No locations found for "{inputValue}"
+					</CustomText>
+				</View>
+			);
+		}
 
 		return (
-			<Card style={styles.dropdown} mode="outlined">
-				{loading && (
-					<View style={styles.loadingContainer}>
-						<ActivityIndicator size="small" />
-						<CustomText variant="bodyMedium" color="secondary" style={styles.loadingText}>
-							Searching locations...
-						</CustomText>
-					</View>
-				)}
-
-				{!loading && locations.length === 0 && inputValue.length >= 2 && (
-					<View style={styles.emptyContainer}>
-						<CustomText variant="bodyMedium" color="secondary">
-							No locations found for "{inputValue}"
-						</CustomText>
-					</View>
-				)}
-
-				{locations.length > 0 && (
-					<FlatList
-						data={locations.slice(0, 8)} // Limit to 8 results
-						renderItem={renderLocationItem}
-						keyExtractor={(item) => item.entityId}
-						style={styles.locationList}
-						keyboardShouldPersistTaps="handled"
-						ItemSeparatorComponent={() => <Divider />}
-					/>
-				)}
-			</Card>
+			<FlatList
+				data={locations.slice(0, 8)} // Limit to 8 results
+				renderItem={renderLocationItem}
+				keyExtractor={(item) => item.entityId}
+				style={styles.locationList}
+				keyboardShouldPersistTaps="handled"
+				ItemSeparatorComponent={() => <Divider />}
+			/>
 		);
 	};
 
@@ -217,15 +216,35 @@ export const CarLocationInput: React.FC<CarLocationInputProps> = ({
 				</CustomText>
 			)}
 
-			{renderDropdown()}
+			{/* Use Portal to render dropdown above everything else */}
+			<Portal>
+				<Modal
+					visible={showDropdown && locations.length > 0}
+					transparent
+					animationType="fade"
+					onRequestClose={() => setShowDropdown(false)}
+				>
+					<Pressable
+						style={styles.modalOverlay}
+						onPress={() => setShowDropdown(false)}
+					>
+						<View style={styles.modalContent}>
+							<Card style={styles.dropdownCard} mode="elevated">
+								<Card.Content style={styles.dropdownContent}>
+									{renderDropdownContent()}
+								</Card.Content>
+							</Card>
+						</View>
+					</Pressable>
+				</Modal>
+			</Portal>
 		</View>
 	);
 };
 
 const styles = StyleSheet.create({
 	container: {
-		position: 'relative',
-		zIndex: 1000,
+		marginBottom: 16,
 	},
 	input: {
 		backgroundColor: '#fff',
@@ -234,45 +253,55 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 		marginLeft: 12,
 	},
-	dropdown: {
-		position: 'absolute',
-		top: 64,
-		left: 0,
-		right: 0,
-		maxHeight: 300,
-		elevation: 8,
-		zIndex: 1000,
-		backgroundColor: '#fff',
+	modalOverlay: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.3)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20,
+	},
+	modalContent: {
+		width: '100%',
+		maxWidth: 400,
+		maxHeight: '70%',
+	},
+	dropdownCard: {
+		elevation: 12,
 		...Platform.select({
 			ios: {
 				shadowColor: '#000',
-				shadowOffset: {width: 0, height: 2},
-				shadowOpacity: 0.25,
-				shadowRadius: 8,
+				shadowOffset: {width: 0, height: 6},
+				shadowOpacity: 0.4,
+				shadowRadius: 12,
 			},
 		}),
 	},
-	loadingContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 16,
-		gap: 12,
-	},
-	loadingText: {
-		flex: 1,
-	},
-	emptyContainer: {
-		padding: 16,
-		alignItems: 'center',
+	dropdownContent: {
+		padding: 0,
+		maxHeight: 400,
 	},
 	locationList: {
-		maxHeight: 250,
+		maxHeight: 380,
+	},
+	loadingContainer: {
+		padding: 32,
+		alignItems: 'center',
+	},
+	loadingText: {
+		marginTop: 12,
+	},
+	emptyContainer: {
+		padding: 32,
+		alignItems: 'center',
 	},
 	locationItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		padding: 16,
 		gap: 12,
+	},
+	locationItemPressed: {
+		backgroundColor: '#f5f5f5',
 	},
 	locationIcon: {
 		width: 40,
